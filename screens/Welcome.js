@@ -1,18 +1,21 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Box, Button, HStack, Input, NativeBaseProvider, ScrollView, Select, Stack, Text, Toast, VStack, View, } from 'native-base';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, ImageBackground, Keyboard, Linking, Platform, Pressable, StatusBar, StyleSheet } from 'react-native';
+import { ActivityIndicator, Image, ImageBackground, Keyboard, Linking, Platform, Pressable, StatusBar, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { API_KEY, OS_TYPE, APP_VERSION, BASE_URL, AccessToken } from '../auth_provider/Config';
 import i18n from '../assets/language/i18n';
-import AuthContainer from '../components/AuthContainer';
 import apiClient from '../api/apiClient';
+import { CountryPicker } from 'react-native-country-codes-picker';
 
 const WelcomeScreen = ({ navigation }) => {
 
     const [loading, setLoading] = React.useState(false);
+
+    const [show, setShow] = React.useState(false);
+    const [countryCode, setCountryCode] = React.useState('');
 
     const { t } = useTranslation();
     const [languageList, SetLanguageList] = React.useState([
@@ -168,8 +171,102 @@ const WelcomeScreen = ({ navigation }) => {
 
     return (
         <NativeBaseProvider>
-            <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-            <AuthContainer>
+            <ImageBackground source={require('../assets/images/bg.jpg')} resizeMode="cover" style={styles.bg}>
+                <LinearGradient
+                    colors={[
+                        'rgba(0,0,0,1)',
+                        'rgba(66,2,2,0.9)',
+                        'rgba(33,1,1,0.7)',
+                        'rgba(16,0,0,0.6)',
+                        'rgba(0,0,0,95)',
+                        'rgba(0,0,0,1)',
+                    ]}
+                    style={{ flex: 1, position: 'relative' }}
+                >
+                    <Stack alignSelf={'center'} justifyContent={'center'} alignItems={'center'} style={{ backgroundColor: '#000000', width: 140, height: 140, marginBottom: 100, marginTop: 100, borderRadius: 100, overflow: 'hidden' }}>
+                        <Image source={require('../assets/images/logo.png')} style={styles.logo} />
+                    </Stack>
+                    <VStack p={5} style={{ position: 'absolute', width: '100%', height: 300, left: 0, bottom: 0 }}>
+                        <ScrollView style={{ width: "100%", padding: 10 }} showsVerticalScrollIndicator={false}>
+                            <VStack space={5}>
+                                <Text textAlign={'center'} color="#ffffff" fontSize="lg">{t('Welcome Back, Please Sign In')}</Text>
+                                <HStack>
+                                    <View style={styles.inputbox}>
+                                        <TouchableOpacity
+                                            onPress={() => setShow(true)}
+                                            style={{
+                                                width: '100%',
+                                                padding: 12,
+                                            }}
+                                        >
+                                            <Text style={{
+                                                color: 'black',
+                                                fontSize: 20
+                                            }}>
+                                                {countryCode}
+                                            </Text>
+                                        </TouchableOpacity>
+
+      // For showing picker just put show state to show prop
+                                        <CountryPicker
+                                            show={show}
+                                            // when picker button press you will get the country object with dial code
+                                            pickerButtonOnPress={(item) => {
+                                                console.log(item);
+                                                setCountryCode(item.flag);
+                                                setShow(false);
+                                            }}
+                                            showOnly={['UA', 'UK', 'IN']}
+                                        />
+                                    </View>
+                                    <View style={styles.inputbox}>
+                                        <Select
+                                            variant="none"
+                                            size="lg"
+                                            // InputLeftElement={<Image source={require('../assets/images/language.png')} style={{ width: 22, objectFit: 'contain', marginLeft: 15, textAlign: 'center' }} />}
+                                            selectedValue={""}
+                                            onValueChange={value => onSaveLang(value)}
+                                            style={{ paddingLeft: 20, height: 48 }}
+                                            _selectedItem={{
+                                                backgroundColor: '#eeeeee',
+                                                endIcon: <Icon name="checkmark-circle" size={20} color="#2BBB86" style={{ right: 0, position: 'absolute' }} />
+                                            }}>
+                                            <Select.Item label={"India"} value={"IND"} />
+                                        </Select>
+                                    </View>
+                                </HStack>
+                                <View style={styles.inputbox}>
+                                    <Input
+                                        size="lg"
+                                        onChangeText={(text) => setPhoneNo(text)}
+                                        value={phoneNo.toString()}
+                                        keyboardType='number-pad'
+                                        maxLength={10}
+                                        variant="unstyled"
+                                        // InputLeftElement={<Icon name="key-outline" size={20} color="#f04e23" style={{ width: 25, marginLeft: 10, textAlign: 'center' }} />}
+                                        placeholder={t("Enter Mobile No") + " *"}
+                                    />
+                                </View>
+                            </VStack>
+                        </ScrollView>
+                    </VStack>
+                </LinearGradient>
+            </ImageBackground>
+            {/* <LinearGradient
+                colors={['#000000', '#000000', '#100000', '#210101', '#420202', '#840303']} // define gradient colors
+                style={{ flex: 1, justifyContent: 'center' }}
+            >
+                <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
+                    <Stack space={5}>
+                        <Image source={require('../assets/images/logo.png')} style={styles.logo} />
+                        <VStack space={2}>
+                            <Text textAlign={'center'} color="#ffffff" fontSize="xl">{t('Welcome')}</Text>
+                            <Text textAlign={'center'} color="#aaaaaa">{t('Please enter Registered Mobile No.')}</Text>
+                        </VStack>
+                    </Stack>
+                </ScrollView>
+            </LinearGradient> */}
+            {/* <AuthContainer>
                 <Text textAlign={'center'} fontSize="2xl" fontWeight="bold">{t('Welcome')}</Text>
                 <Text textAlign={'center'} color="#666666">{t('Please enter Registered Mobile No.')}</Text>
                 <View style={{ height: 20 }} />
@@ -240,33 +337,23 @@ const WelcomeScreen = ({ navigation }) => {
                 <View style={styles.spincontainer}>
                     <ActivityIndicator animating={loading} size="large" color="#42bb52" />
                 </View>
-            )}
+            )} */}
         </NativeBaseProvider>
     )
 };
 
 const styles = StyleSheet.create({
-    bgimage: { flex: 1 },
-    fromContainer: { width: '80%', backgroundColor: '#ffffff', borderRadius: 30, overflow: 'hidden', borderColor: '#dddddd', borderWidth: 1, borderTopWidth: 0, elevation: 10, shadowColor: '#777777', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 10 },
-    mainContainer: { width: '100%', justifyContent: 'center', alignItems: 'center' },
-    logo: { width: 180, height: 180, resizeMode: 'contain', marginVertical: 20 },
+    logo: { width: 120, height: 120, resizeMode: 'contain', alignSelf: 'center' },
+    bg: {
+        width: '100%',
+        height: '100%',
+        alignSelf: 'center',
+        resizeMode: 'cover',
+        position: 'relative'
+    },
     inputbox: { backgroundColor: '#ffffff', borderRadius: 30, width: '100%', overflow: 'hidden', borderColor: '#e7e7e9', borderWidth: 2 },
     custbtn: { width: '100%', borderRadius: 30, overflow: 'hidden', height: 48 },
     spincontainer: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0, 0, 0, 0.9)' },
-    custbtn: {
-        width: '100%',
-        borderRadius: 5,
-        overflow: 'hidden',
-        height: 48
-    },
-    inputbox: {
-        backgroundColor: '#ffffff',
-        borderRadius: 5,
-        width: '100%',
-        overflow: 'hidden',
-        borderColor: '#e7e7e9',
-        borderWidth: 2
-    },
 });
 
 export default WelcomeScreen;

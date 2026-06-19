@@ -12,6 +12,15 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 
+import { createStackNavigator } from '@react-navigation/stack';
+import { NavigationContainer } from '@react-navigation/native';
+import { createDrawerNavigator } from '@react-navigation/drawer';
+
+import WelcomeScreen from './screens/Welcome';
+
+const Stack = createStackNavigator();
+const Drawer = createDrawerNavigator();
+
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -23,16 +32,23 @@ function App() {
   );
 }
 
+function MyStack() {
+  return (
+    <Stack.Navigator initialRouteName="Welcome" screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Welcome" component={WelcomeScreen} />
+    </Stack.Navigator>
+  );
+}
+
 function AppContent() {
   const safeAreaInsets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
+    <NavigationContainer>
+      <View style={[styles.container, { paddingTop: safeAreaInsets.top, paddingBottom: safeAreaInsets.bottom }]}>
+        <MyStack />
+      </View>
+    </NavigationContainer>
   );
 }
 
