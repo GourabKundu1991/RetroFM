@@ -9,16 +9,7 @@ const CommonHeader = ({ showBack, onPressBack, showMenu, title, suffixIcon, onPr
     const height = Dimensions.get('window').height;
     const navigation = useNavigation();
     return (
-        // <LinearGradient
-        //     start={{ x: 0, y: 0.5 }}    // start from left-center
-        //     end={{ x: 1, y: 0.5 }}      // end at right-center
-        //     colors={colorTheme ? [colorTheme?.dark, colorTheme?.normal, colorTheme?.light] : ['#0b353b', '#107b3f', '#16c151', '#117845']}
-        //     style={{ height: height * 0.08, elevation: 10, justifyContent: 'center' }}
-        // >
-        <Box
-            bgColor={colorTheme?.normal}
-            style={{ height: height * 0.08, elevation: 10, justifyContent: 'center' }}
-        >
+        <Box style={{ height: height * 0.08, elevation: 10, justifyContent: 'center', borderColor: '#fc030b', borderBottomWidth: 1 }}>
             <Stack justifyContent={'center'}>
                 <HStack px={4} justifyContent={'space-between'} alignItems={'center'}>
                     <HStack alignItems={'center'}>
@@ -58,7 +49,6 @@ const CommonHeader = ({ showBack, onPressBack, showMenu, title, suffixIcon, onPr
                     </HStack>
                 </HStack>
             </Stack>
-            {/* </LinearGradient> */}
         </Box>
     )
 }

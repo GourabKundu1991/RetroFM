@@ -5,18 +5,18 @@ import IonIcons from 'react-native-vector-icons/Ionicons';
 import { t } from 'i18next';
 import { useNavigation } from '@react-navigation/native';
 
-const BottomTabs = ({ selected = 0, colorTheme }) => {
-    // const [selected, setSelected] = React.useState(0);
+const BottomTabs = ({ selected = 0 }) => {
+    
     const navigation = useNavigation();
 
     return (
-        <HStack bg="white" alignItems="center" safeAreaBottom shadow={6}>
+        <HStack alignItems="center" safeAreaBottom shadow={6} style={{borderColor: '#fc030b', borderTopWidth: 1}}>
             <MenuItem
                 name={t('Home')}
                 icon={'home-outline'}
                 selectedIcon={'home'}
                 isSelected={selected == 0}
-                color={colorTheme?.normal}
+                color={"#fc030b"}
                 onPress={() => {
                     if (selected != 0) {
                         navigation.navigate('Home');
@@ -28,7 +28,7 @@ const BottomTabs = ({ selected = 0, colorTheme }) => {
                 icon={'gift-outline'}
                 selectedIcon={'gift'}
                 isSelected={selected == 1}
-                color={colorTheme?.normal}
+                color={"#fc030b"}
                 onPress={() => {
                     if (selected != 1) {
                         navigation.navigate('RewardCategory');
@@ -40,7 +40,7 @@ const BottomTabs = ({ selected = 0, colorTheme }) => {
                 icon={'bag-handle-outline'}
                 selectedIcon={'bag-handle'}
                 isSelected={selected == 2}
-                color={colorTheme?.normal}
+                color={"#fc030b"}
                 onPress={() => {
                     if (selected != 2) {
                         navigation.navigate('MyCart');
@@ -52,7 +52,7 @@ const BottomTabs = ({ selected = 0, colorTheme }) => {
                 icon={'person-outline'}
                 selectedIcon={'person'}
                 isSelected={selected == 3}
-                color={colorTheme?.normal}
+                color={"#fc030b"}
                 onPress={() => {
                     if (selected != 3) {
                         navigation.navigate('Profile');
@@ -65,9 +65,9 @@ const BottomTabs = ({ selected = 0, colorTheme }) => {
 
 const MenuItem = ({ isSelected, name, selectedIcon, icon, onPress, color }) => {
     return (
-        <Pressable borderBottomWidth={isSelected ? 3 : 0} borderColor={color ?? '#00915D'} cursor="pointer" opacity={isSelected ? 1 : 0.5} py="3" flex={1} onPress={() => onPress()}>
+        <Pressable cursor="pointer" opacity={isSelected ? 1 : 0.5} py="3" flex={1} onPress={() => onPress()}>
             <Center>
-                <Icon mb="1" as={<IonIcons name={isSelected ? selectedIcon : icon} />} color={isSelected ? color ?? color : "gray.700"} size="lg" />
+                <Icon mb="1" as={<IonIcons name={isSelected ? selectedIcon : icon} />} color={isSelected ? color ?? color : "#cccccc"} size="lg" />
                 {(isSelected) && (
                     <Box backgroundColor={color} style={{width: 6, height: 6, marginTop: 5}} borderRadius={20} overflow={'hidden'}></Box>
                 )}

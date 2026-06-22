@@ -4,7 +4,6 @@ import { Alert, Image, ImageBackground, ScrollView, StyleSheet } from 'react-nat
 import Events from '../auth_provider/Events';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
-import LinearGradient from 'react-native-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 
@@ -63,7 +62,7 @@ const LeftMenuBarScreen = () => {
     return (
         <NativeBaseProvider>
             <Box flex={1} bg="white" overflow="hidden">
-                {(colorTheme) && (
+                {/* {(colorTheme) && (
                     <Stack backgroundColor={colorTheme.normal}>
                         <ImageBackground source={require('../assets/images/back.png')} style={{ paddingTop: 50, paddingHorizontal: 10, paddingBottom: 30 }}>
                             <VStack>
@@ -83,8 +82,8 @@ const LeftMenuBarScreen = () => {
                             </VStack>
                         </ImageBackground>
                     </Stack>
-                )}
-                <ScrollView showsVerticalScrollIndicator={false}>
+                )} */}
+                {/* <ScrollView showsVerticalScrollIndicator={false}>
                     <Stack px={4} mt={5} pb={10}>
                         {mainMenu.map((item, index) =>
                             <Pressable key={index} onPress={() => navigation.navigate(item.url)} borderColor="#cccccc" borderBottomWidth="1" paddingY={1.5}>
@@ -101,13 +100,12 @@ const LeftMenuBarScreen = () => {
                             </HStack>
                         </Pressable>
                     </Stack>
-                    {/* <Box style={{ position: 'absolute', bottom: 5, right: 5 }}> */}
                     <ImageBackground source={require('../assets/images/background.png')} imageStyle={{ resizeMode: 'cover', opacity: 0.25 }} style={{ height: 150, width: '100%' }}>
                         <Box alignItems={'center'} pb={4} pr={2}>
                             <Image source={require('../assets/images/logo.png')} style={{ width: 120, height: 60, resizeMode: 'contain' }} />
                         </Box>
                     </ImageBackground>
-                </ScrollView>
+                </ScrollView> */}
             </Box>
         </NativeBaseProvider>
     );

@@ -11,14 +11,14 @@ import LinearGradient from 'react-native-linear-gradient';
 import Events from '../auth_provider/Events';
 import moment from 'moment';
 
-import PushControllerService from '../auth_provider/PushController';
+//import PushControllerService from '../auth_provider/PushController';
 import CommonHeader from '../components/CommonHeader';
 import BottomTabs from '../components/BottomTabs';
 import apiClient from '../api/apiClient';
 
 const HomeScreen = ({ navigation }) => {
 
-    PushControllerService({ navigation });
+    //PushControllerService({ navigation });
 
     const BannerWidth = Dimensions.get('window').width;
     const { width, height } = Dimensions.get('window');
@@ -72,7 +72,7 @@ const HomeScreen = ({ navigation }) => {
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
-            setLoading(true);
+            //setLoading(true);
             AsyncStorage.getItem('language').then(val => {
                 if (val != null) {
                     setLanguage(val);
@@ -320,7 +320,7 @@ const HomeScreen = ({ navigation }) => {
         );
     }
 
-    const UserInfoContent = () => {
+    /* const UserInfoContent = () => {
         return (
             <Box mb={2} borderRadius={10} borderWidth={1} borderColor={'#EEEEEE'} bgColor={'white'} mt={2} overflow={'hidden'} style={{ elevation: 4 }}>
                 <HStack px={2} py={2} justifyContent={'space-between'} >
@@ -349,17 +349,13 @@ const HomeScreen = ({ navigation }) => {
                             <Text color="#000000" fontSize="md" fontWeight="bold">{profileDetails.available_point ? profileDetails.available_point : "0"}</Text>
                             <Text lineHeight={12} textAlign={'center'} color="#222222" fontSize="xs">{t("Available for Redemption")}</Text>
                         </VStack>
-                        {/* <VStack width={'30%'} borderLeftWidth={0.2} borderColor={"#999999"} space={1} justifyContent={'center'} alignItems={'center'}>
-                            <Text color="#000000" fontSize="md" fontWeight="bold">{profileDetails.available_reserve_points ? profileDetails.available_reserve_points : "0"}</Text>
-                            <Text lineHeight={12} textAlign={'center'} color="#222222" fontSize="xs">{t("Reserve Points")}</Text>
-                        </VStack> */}
                     </HStack>
                 </LinearGradient>
             </Box>
         );
-    }
+    } */
 
-    const OrgContent = () => {
+    /* const OrgContent = () => {
         return (
             <Box mt={2} px={4} py={5} borderRadius={10} bgColor={'white'}>
                 <HStack justifyContent={'space-between'} alignItems={'center'}>
@@ -377,9 +373,9 @@ const HomeScreen = ({ navigation }) => {
                 </HStack>
             </Box>
         );
-    }
+    } */
 
-    const BannerContent = () => {
+    /* const BannerContent = () => {
         return (
             <Carousel
                 loop
@@ -391,9 +387,9 @@ const HomeScreen = ({ navigation }) => {
                 renderItem={renderBanner}
             />
         );
-    }
+    } */
 
-    const CategoryContent = () => {
+    /* const CategoryContent = () => {
         return (
             <Box >
                 <HStack justifyContent={'space-between'} alignItems={'center'}>
@@ -417,9 +413,9 @@ const HomeScreen = ({ navigation }) => {
                 </HStack>
             </Box>
         );
-    }
+    } */
 
-    const QuickLinkContent = () => {
+    /* const QuickLinkContent = () => {
         return (
             <Box mt={4}>
                 <Text fontSize={'md'} fontWeight={'medium'}>{t('Quick Links')}</Text>
@@ -431,7 +427,6 @@ const HomeScreen = ({ navigation }) => {
                                 <Box bgColor={colorTheme.light} width={45} height={45} borderRadius={30} alignItems={'center'} justifyContent={'center'}>
                                     <Icon name={item.icon + "-outline"} size={30} color={colorTheme.normal} />
                                 </Box>
-                                {/* <Icon name={item.icon} size={40} color={colorTheme.normal} /> */}
                                 <Text mt={0.5} fontSize={11} textAlign={'center'}>{item.title}</Text>
                             </TouchableOpacity>
                         )}
@@ -439,11 +434,51 @@ const HomeScreen = ({ navigation }) => {
                 </Box>
             </Box>
         );
-    }
+    } */
 
     return (
         <NativeBaseProvider>
-            <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+            <VStack backgroundColor={"#000000"} flex={1}>
+                <CommonHeader showMenu={true} title={t('Welcome')} suffixIcon={'language-outline'} />
+                <ScrollView style={{ width: "100%", height: '100%', padding: 10 }} showsVerticalScrollIndicator={false}>
+                    <Stack padding={2}>
+                        <Box width={'100%'}>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                <HStack space={2}>
+                                    <TouchableOpacity onPress={() => onGoPortfolio(item)} style={{ backgroundColor: '#fc030b', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 30, overflow: 'hidden' }}>
+                                        <Text color="#ffffff" fontSize="sm" fontWeight="medium">{t("Category")}</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => onGoPortfolio(item)} style={{ backgroundColor: '#eeeeee', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 30, overflow: 'hidden' }}>
+                                        <Text color="#000000" fontSize="sm" fontWeight="medium">{t("Category")}</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => onGoPortfolio(item)} style={{ backgroundColor: '#eeeeee', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 30, overflow: 'hidden' }}>
+                                        <Text color="#000000" fontSize="sm" fontWeight="medium">{t("Category")}</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => onGoPortfolio(item)} style={{ backgroundColor: '#eeeeee', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 30, overflow: 'hidden' }}>
+                                        <Text color="#000000" fontSize="sm" fontWeight="medium">{t("Category")}</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => onGoPortfolio(item)} style={{ backgroundColor: '#eeeeee', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 30, overflow: 'hidden' }}>
+                                        <Text color="#000000" fontSize="sm" fontWeight="medium">{t("Category")}</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => onGoPortfolio(item)} style={{ backgroundColor: '#eeeeee', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 30, overflow: 'hidden' }}>
+                                        <Text color="#000000" fontSize="sm" fontWeight="medium">{t("Category")}</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => onGoPortfolio(item)} style={{ backgroundColor: '#eeeeee', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 30, overflow: 'hidden' }}>
+                                        <Text color="#000000" fontSize="sm" fontWeight="medium">{t("Category")}</Text>
+                                    </TouchableOpacity>
+                                </HStack>
+                            </ScrollView>
+                        </Box>
+                    </Stack>
+                </ScrollView>
+                <BottomTabs selected={0} />
+            </VStack>
+            {loading && (
+                <View style={styles.spincontainer}>
+                    <ActivityIndicator animating={loading} size="large" color="#fc030b" />
+                </View>
+            )}
+            {/* <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
             <CommonHeader
                 showMenu={true}
                 title={t('Welcome')}
@@ -545,7 +580,7 @@ const HomeScreen = ({ navigation }) => {
                         </VStack>
                     </LinearGradient>
                 </View>
-            )}
+            )} */}
         </NativeBaseProvider>
     )
 };

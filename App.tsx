@@ -16,7 +16,9 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 
-import WelcomeScreen from './screens/Welcome';
+import LoginScreen from './screens/Login';
+import HomeScreen from './screens/Home';
+import LeftMenuBarScreen from './screens/LeftMenuBar';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -34,8 +36,9 @@ function App() {
 
 function MyStack() {
   return (
-    <Stack.Navigator initialRouteName="Welcome" screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Welcome" component={WelcomeScreen} />
+    <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Home" component={HomeScreen} />
     </Stack.Navigator>
   );
 }
@@ -46,7 +49,14 @@ function AppContent() {
   return (
     <NavigationContainer>
       <View style={[styles.container, { paddingTop: safeAreaInsets.top, paddingBottom: safeAreaInsets.bottom }]}>
-        <MyStack />
+      <Drawer.Navigator
+          drawerContent={(props) => <LeftMenuBarScreen {...props} />}>
+          <Drawer.Screen
+            name="Welcome"
+            options={{ headerShown: false, swipeEnabled: false }}
+            component={MyStack}
+          />
+        </Drawer.Navigator>
       </View>
     </NavigationContainer>
   );
