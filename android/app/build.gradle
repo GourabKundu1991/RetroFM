@@ -118,4 +118,8 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // for GIF
+    implementation 'com.facebook.fresco:animated-gif:3.6.0'
+    
 }

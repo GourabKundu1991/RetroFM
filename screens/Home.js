@@ -2,7 +2,7 @@ import { Avatar, Box, Button, Checkbox, HStack, Input, NativeBaseProvider, Scrol
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Alert, Dimensions, Image, ImageBackground, Keyboard, Linking, Platform, Pressable, StatusBar, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { AccessToken, API_KEY, BASE_URL } from '../auth_provider/Config';
+import { AccessToken, API_KEY, AuthToken, BASE_URL } from '../auth_provider/Config';
 import Carousel from "react-native-reanimated-carousel";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
@@ -21,17 +21,18 @@ const HomeScreen = ({ navigation }) => {
     //PushControllerService({ navigation });
 
     const BannerWidth = Dimensions.get('window').width;
-    const { width, height } = Dimensions.get('window');
-    const BannerHeight = 200;
+    const BannerHeight = 250;
 
     const { t } = useTranslation();
     const [currentLanguage, setLanguage] = React.useState('Eng');
     const [loading, setLoading] = React.useState(false);
-    const [colorTheme, setColorTheme] = React.useState("");
+
+    const [allCategories, setAllCategories] = React.useState([]);
+    const [allBanners, setAllBanners] = React.useState([]);
 
     const [totalcart, setTotalcarte] = React.useState(0);
-    const [allBanners, setAllBanners] = React.useState([]);
-    const [allcategories, setAllcategories] = React.useState([]);
+
+
     const [homeMenu, setHomeMenu] = React.useState([]);
     const [voucherPop, setVoucherPop] = React.useState(false);
     const [awareCheck, setAwareCheck] = React.useState(false);
@@ -62,9 +63,9 @@ const HomeScreen = ({ navigation }) => {
 
     const renderBanner = ({ item, index }) => {
         return (
-            <View key={index} style={styles.sliderbanner}>
+            <View key={index}>
                 <TouchableOpacity onPress={() => goBannerDetails(item)}>
-                    <Image style={{ width: '100%', height: 150, resizeMode: 'stretch', marginLeft: 0, borderRadius: 10 }} source={item.image ? { uri: item.image } : require('../assets/images/noimage.png')} />
+                    <Image style={{ width: '100%', height: 250, resizeMode: 'stretch' }} source={item.banner_image ? { uri: item.banner_image } : require('../assets/images/noimage.png')} />
                 </TouchableOpacity>
             </View>
         );
@@ -72,7 +73,7 @@ const HomeScreen = ({ navigation }) => {
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
-            //setLoading(true);
+            setLoading(true);
             AsyncStorage.getItem('language').then(val => {
                 if (val != null) {
                     setLanguage(val);
@@ -89,12 +90,83 @@ const HomeScreen = ({ navigation }) => {
             });
             AsyncStorage.getItem('userToken').then(val => {
                 if (val != null) {
-                    getAllData(JSON.parse(val).org_id);
+                    getAllCate();
+                    getBanner();
+                    //getAllData();
                 }
             });
         });
         return unsubscribe;
     }, []);
+
+    const getAllCate = () => {
+        AsyncStorage.getItem('userToken').then(val => {
+            if (val != null) {
+                let formdata = new FormData();
+                apiClient
+                    .post(`${BASE_URL}/get-all-category`, "", {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            authtoken: `${AuthToken}`,
+                            accesstoken: JSON.parse(val).access_token
+                        },
+                    }).then(response => {
+                        return response.data;
+                    })
+                    .then((responseJson) => {
+                        setLoading(false);
+                        console.log("Category:", responseJson);
+                        if (responseJson.status == true) {
+                            setAllCategories(responseJson.details);
+                        } else {
+                            Toast.show({ description: responseJson.message });
+                            if (responseJson.access_token_expired == true) {
+                                AsyncStorage.clear();
+                                navigation.navigate('Login');
+                            }
+                        }
+                    })
+                    .catch((error) => {
+                        setLoading(false);
+                        console.log("Category Error:", error);
+                    });
+            }
+        })
+    }
+    const getBanner = () => {
+        AsyncStorage.getItem('userToken').then(val => {
+            if (val != null) {
+                let formdata = new FormData();
+                apiClient
+                    .post(`${BASE_URL}/get-banners`, "", {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            authtoken: `${AuthToken}`,
+                            accesstoken: JSON.parse(val).access_token
+                        },
+                    }).then(response => {
+                        return response.data;
+                    })
+                    .then((responseJson) => {
+                        setLoading(false);
+                        console.log("Banner:", responseJson);
+                        if (responseJson.status == true) {
+                            setAllBanners(responseJson.details);
+                        } else {
+                            Toast.show({ description: responseJson.message });
+                            if (responseJson.access_token_expired == true) {
+                                AsyncStorage.clear();
+                                navigation.navigate('Login');
+                            }
+                        }
+                    })
+                    .catch((error) => {
+                        setLoading(false);
+                        console.log("Banner Error:", error);
+                    });
+            }
+        })
+    }
 
     const getAllData = (selectedORG) => {
         AsyncStorage.getItem('userToken').then(val => {
@@ -127,7 +199,7 @@ const HomeScreen = ({ navigation }) => {
                             } else {
                                 setAllBanners(responseJson.data.banners);
                                 setHomeMenu(responseJson.data.home_menu);
-                                setAllcategories(responseJson.data.categories);
+                                setAllCategories(responseJson.data.categories);
                                 setTotalcarte(responseJson.data.total_cart_count);
                                 if (responseJson.data.is_approved == 2) {
                                     Events.publish('mainMenu', responseJson.data.menu);
@@ -398,7 +470,7 @@ const HomeScreen = ({ navigation }) => {
                 </HStack>
                 <Stack my={1} />
                 <HStack py={3} borderRadius={10} overflow={'hidden'} bgColor={'#FFFFFF'} justifyContent={'space-evenly'} flexWrap={'wrap'} width={'100%'}>
-                    {allcategories.slice(0, 5).map((item, index) =>
+                    {allCategories.slice(0, 5).map((item, index) =>
                         <TouchableOpacity activeOpacity={0.5} key={index} onPress={() => navigation.navigate("Rewards", { cateId: item.categoryId })} style={{ width: '18%', alignItems: 'center' }}>
                             <Box bgColor={colorTheme.light} width={45} height={45} borderRadius={30} alignItems={'center'} justifyContent={'center'}>
                                 {item.isCategoryImage === 1 ?
@@ -441,33 +513,34 @@ const HomeScreen = ({ navigation }) => {
             <VStack backgroundColor={"#000000"} flex={1}>
                 <CommonHeader showMenu={true} title={t('Welcome')} suffixIcon={'language-outline'} />
                 <ScrollView style={{ width: "100%", height: '100%', padding: 10 }} showsVerticalScrollIndicator={false}>
-                    <Stack padding={2}>
+                    <Stack padding={2} space={5}>
                         <Box width={'100%'}>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                                 <HStack space={2}>
-                                    <TouchableOpacity onPress={() => onGoPortfolio(item)} style={{ backgroundColor: '#fc030b', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 30, overflow: 'hidden' }}>
-                                        <Text color="#ffffff" fontSize="sm" fontWeight="medium">{t("Category")}</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => onGoPortfolio(item)} style={{ backgroundColor: '#eeeeee', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 30, overflow: 'hidden' }}>
-                                        <Text color="#000000" fontSize="sm" fontWeight="medium">{t("Category")}</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => onGoPortfolio(item)} style={{ backgroundColor: '#eeeeee', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 30, overflow: 'hidden' }}>
-                                        <Text color="#000000" fontSize="sm" fontWeight="medium">{t("Category")}</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => onGoPortfolio(item)} style={{ backgroundColor: '#eeeeee', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 30, overflow: 'hidden' }}>
-                                        <Text color="#000000" fontSize="sm" fontWeight="medium">{t("Category")}</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => onGoPortfolio(item)} style={{ backgroundColor: '#eeeeee', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 30, overflow: 'hidden' }}>
-                                        <Text color="#000000" fontSize="sm" fontWeight="medium">{t("Category")}</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => onGoPortfolio(item)} style={{ backgroundColor: '#eeeeee', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 30, overflow: 'hidden' }}>
-                                        <Text color="#000000" fontSize="sm" fontWeight="medium">{t("Category")}</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => onGoPortfolio(item)} style={{ backgroundColor: '#eeeeee', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 30, overflow: 'hidden' }}>
-                                        <Text color="#000000" fontSize="sm" fontWeight="medium">{t("Category")}</Text>
-                                    </TouchableOpacity>
+                                    {allCategories.map((item, index) =>
+                                        <TouchableOpacity key={index} onPress={() => goCate(item)} style={{ borderColor: '#666666', borderWidth: 1, paddingHorizontal: 15, paddingVertical: 5, borderRadius: 30, overflow: 'hidden' }}>
+                                            <Text color="#666666" fontSize="sm" fontWeight="medium">{item.name}</Text>
+                                        </TouchableOpacity>
+                                    )}
                                 </HStack>
                             </ScrollView>
+                        </Box>
+                        <Carousel
+                            loop
+                            autoPlay
+                            width={BannerWidth}
+                            height={BannerHeight}
+                            data={allBanners}
+                            style={{ borderWidth: 1, borderColor: '#333333', alignSelf: 'center' }}
+                            renderItem={renderBanner}
+                        />
+                        <Box width={'100%'}>
+                            <Image
+                                style={{ width: '100%', height: 200, resizeMode: 'stretch' }}
+                                source={{
+                                    uri: 'https://app.retrofm.in/assets/saturday_night/saturday-night-home-banner.gif',
+                                }}
+                            />
                         </Box>
                     </Stack>
                 </ScrollView>
@@ -587,11 +660,10 @@ const HomeScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
     noti: { color: '#ffffff', width: 18, height: 18, borderRadius: 20, position: 'absolute', top: -5, right: -3, fontSize: 11, lineHeight: 16, paddingTop: 1, textAlign: 'center', overflow: 'hidden' },
-    sliderbanner: { borderRadius: 20, overflow: 'hidden', borderColor: '#ffffff', borderWidth: 1, elevation: 10, marginVertical: 15, shadowColor: '#000000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 10, height: 240, backgroundColor: '#eeeeee' },
     linkbox: { borderRadius: 20, width: '30.33%', margin: '1.5%', height: 130, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
     spincontainer: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0, 0, 0, 0.9)' },
-    sliderbanner: {
-        width: '96%',
+    /* sliderbanner: {
+        //width: '96%',
         overflow: 'hidden',
         marginVertical: 15,
         // borderRadius: 5,
@@ -605,7 +677,7 @@ const styles = StyleSheet.create({
         // shadowRadius: 10,
         // height: 1600,
         // backgroundColor: '#eeeeee'
-    },
+    } */
 });
 
 export default HomeScreen;

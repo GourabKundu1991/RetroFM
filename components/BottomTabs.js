@@ -10,7 +10,7 @@ const BottomTabs = ({ selected = 0 }) => {
     const navigation = useNavigation();
 
     return (
-        <HStack alignItems="center" safeAreaBottom shadow={6} style={{borderColor: '#fc030b', borderTopWidth: 1}}>
+        <HStack alignItems="center" safeAreaBottom shadow={6} style={{borderColor: '#333333', borderTopWidth: 1}}>
             <MenuItem
                 name={t('Home')}
                 icon={'home-outline'}

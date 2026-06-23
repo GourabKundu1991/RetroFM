@@ -1,0 +1,48 @@
+diff --git a/node_modules/native-base/src/core/color-mode/hooks.tsx b/node_modules/native-base/src/core/color-mode/hooks.tsx
+index caf9079..0a2207f 100644
+--- a/node_modules/native-base/src/core/color-mode/hooks.tsx
++++ b/node_modules/native-base/src/core/color-mode/hooks.tsx
+@@ -32,8 +32,8 @@ export const useAppState = () => {
+     () => ({
+       getCurrentValue: () => AppState.currentState,
+       subscribe: (callback: () => void) => {
+-        AppState.addEventListener('change', callback);
+-        return () => AppState.removeEventListener('change', callback);
++        const sub = AppState.addEventListener('change', callback);
++        return () => sub.remove(); // ✅ FIXED
+       },
+     }),
+     []
+diff --git a/node_modules/native-base/src/hooks/useKeyboardDismissable.ts b/node_modules/native-base/src/hooks/useKeyboardDismissable.ts
+index f3cfa44..a1bdf8e 100644
+--- a/node_modules/native-base/src/hooks/useKeyboardDismissable.ts
++++ b/node_modules/native-base/src/hooks/useKeyboardDismissable.ts
+@@ -44,16 +44,20 @@ export const useKeyboardDismissable = ({ enabled, callback }: IParams) => {
+ 
+ export function useBackHandler({ enabled, callback }: IParams) {
+   useEffect(() => {
+-    let backHandler = () => {
++    if (!enabled) return;
++
++    const backHandler = () => {
+       callback();
+       return true;
+     };
+-    if (enabled) {
+-      BackHandler.addEventListener('hardwareBackPress', backHandler);
+-    } else {
+-      BackHandler.removeEventListener('hardwareBackPress', backHandler);
+-    }
+-    return () =>
+-      BackHandler.removeEventListener('hardwareBackPress', backHandler);
++
++    const subscription = BackHandler.addEventListener(
++      'hardwareBackPress',
++      backHandler
++    );
++
++    return () => {
++      subscription.remove(); // ✅ correct cleanup
++    };
+   }, [enabled, callback]);
+ }

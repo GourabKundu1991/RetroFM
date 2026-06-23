@@ -9,7 +9,7 @@ const CommonHeader = ({ showBack, onPressBack, showMenu, title, suffixIcon, onPr
     const height = Dimensions.get('window').height;
     const navigation = useNavigation();
     return (
-        <Box style={{ height: height * 0.08, elevation: 10, justifyContent: 'center', borderColor: '#fc030b', borderBottomWidth: 1 }}>
+        <Box style={{ height: height * 0.08,  justifyContent: 'center', borderColor: '#333333', borderBottomWidth: 1 }}>
             <Stack justifyContent={'center'}>
                 <HStack px={4} justifyContent={'space-between'} alignItems={'center'}>
                     <HStack alignItems={'center'}>
@@ -21,12 +21,12 @@ const CommonHeader = ({ showBack, onPressBack, showMenu, title, suffixIcon, onPr
                                 }
                                 navigation.goBack()
                             }}>
-                                <Icon name="arrow-back-outline" size={22} color="#ffffff" />
+                                <Icon name="arrow-back-outline" size={22} color="#fc030b" />
                             </TouchableOpacity>
                         )}
                         {(showMenu) && (
                             <TouchableOpacity onPress={() => navigation.openDrawer()}>
-                                <Icon name="menu" size={22} color={'white'} />
+                                <Icon name="menu" size={22} color={'#fc030b'} />
                             </TouchableOpacity>
                         )}
                         <View style={{ width: 10 }} />
@@ -37,7 +37,7 @@ const CommonHeader = ({ showBack, onPressBack, showMenu, title, suffixIcon, onPr
                     <HStack alignItems={'center'} space={3}>
                         {(suffixIcon) && (
                             <TouchableOpacity disabled={!onPressSuffix} onPress={() => onPressSuffix()}>
-                                <Icon name={suffixIcon} size={28} color={'white'} />
+                                <Icon name={suffixIcon} size={22} color={'#fc030b'} />
                             </TouchableOpacity>
                         )}
                         {(showCart) && (
