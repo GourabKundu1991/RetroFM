@@ -19,6 +19,8 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import LoginScreen from './screens/Login';
 import HomeScreen from './screens/Home';
 import LeftMenuBarScreen from './screens/LeftMenuBar';
+import AuthorListScreen from './screens/AuthorList';
+import AuthorDetailsScreen from './screens/AuthorDetails';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -39,6 +41,8 @@ function MyStack() {
     <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="AuthorList" component={AuthorListScreen} />
+      <Stack.Screen name="AuthorDetails" component={AuthorDetailsScreen} />
     </Stack.Navigator>
   );
 }

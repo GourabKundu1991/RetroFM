@@ -1,5 +1,5 @@
 import { Avatar, Box, Button, Checkbox, HStack, Input, NativeBaseProvider, ScrollView, Stack, Text, Toast, VStack } from 'native-base';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ActivityIndicator, Alert, Dimensions, Image, ImageBackground, Keyboard, Linking, Platform, Pressable, StatusBar, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { AccessToken, API_KEY, AuthToken, BASE_URL } from '../auth_provider/Config';
@@ -15,6 +15,10 @@ import moment from 'moment';
 import CommonHeader from '../components/CommonHeader';
 import BottomTabs from '../components/BottomTabs';
 import apiClient from '../api/apiClient';
+import FastImage from 'react-native-fast-image';
+
+import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads'
+const adUnitId = 'ca-app-pub-7993937625809320/8111248986';
 
 const HomeScreen = ({ navigation }) => {
 
@@ -28,28 +32,21 @@ const HomeScreen = ({ navigation }) => {
     const [loading, setLoading] = React.useState(false);
 
     const [allCategories, setAllCategories] = React.useState([]);
+    const [selectedCate, setSelectedCate] = React.useState("");
+
+    const [subCategories, setSubCategories] = React.useState([]);
+
     const [allBanners, setAllBanners] = React.useState([]);
+    const timerIntervalRef = React.useRef(null);
+    const [timeLeft, setTimeLeft] = React.useState('');
 
-    const [totalcart, setTotalcarte] = React.useState(0);
+    const [allAuthor, setAllAuthor] = React.useState([]);
 
+    const [isImageLoading, setIsImageLoading] = React.useState(false);
 
-    const [homeMenu, setHomeMenu] = React.useState([]);
-    const [voucherPop, setVoucherPop] = React.useState(false);
-    const [awareCheck, setAwareCheck] = React.useState(false);
-
-    const [isPending, setIsPending] = React.useState(false);
-    const [isKYC, setIsKYC] = React.useState(false);
-
-    const [profileDetails, setProfileDetails] = React.useState("");
-
-    const [selectedORG, setSelectedORG] = React.useState("");
-
-    const [orgName, setOrgName] = React.useState("");
-    const [duplicateAccount, setDuplicateAccount] = React.useState([]);
-
-    const [tierUrl, setTierUrl] = React.useState("");
-
-    const [imageBase, setImageBase] = React.useState("");
+    const [saturdayNight, setSaturdayNight] = React.useState("");
+    const [subcriptionPOP, setSubcriptionPOP] = React.useState(Boolean);
+    const [subcriptionImage, setSubcriptionImage] = React.useState("");
 
     const goBannerDetails = (dataValue) => {
         if (dataValue.open_type == 1) {
@@ -64,8 +61,11 @@ const HomeScreen = ({ navigation }) => {
     const renderBanner = ({ item, index }) => {
         return (
             <View key={index}>
-                <TouchableOpacity onPress={() => goBannerDetails(item)}>
+                <TouchableOpacity onPress={() => goBannerDetails(item)} style={{ position: 'relative' }}>
                     <Image style={{ width: '100%', height: 250, resizeMode: 'stretch' }} source={item.banner_image ? { uri: item.banner_image } : require('../assets/images/noimage.png')} />
+                    <Box style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', top: 0, left: 0 }}>
+                        <Icon name="play-circle" size={70} color="#ffffff" />
+                    </Box>
                 </TouchableOpacity>
             </View>
         );
@@ -88,13 +88,7 @@ const HomeScreen = ({ navigation }) => {
                         .catch(err => console.log());
                 }
             });
-            AsyncStorage.getItem('userToken').then(val => {
-                if (val != null) {
-                    getAllCate();
-                    getBanner();
-                    //getAllData();
-                }
-            });
+            getAllCate();
         });
         return unsubscribe;
     }, []);
@@ -103,8 +97,9 @@ const HomeScreen = ({ navigation }) => {
         AsyncStorage.getItem('userToken').then(val => {
             if (val != null) {
                 let formdata = new FormData();
+                formdata.append("location", "home");
                 apiClient
-                    .post(`${BASE_URL}/get-all-category`, "", {
+                    .post(`${BASE_URL}/get-all-category`, formdata, {
                         headers: {
                             'Content-Type': 'multipart/form-data',
                             authtoken: `${AuthToken}`,
@@ -114,11 +109,12 @@ const HomeScreen = ({ navigation }) => {
                         return response.data;
                     })
                     .then((responseJson) => {
-                        setLoading(false);
                         console.log("Category:", responseJson);
                         if (responseJson.status == true) {
                             setAllCategories(responseJson.details);
+                            getBanner();
                         } else {
+                            setLoading(false);
                             Toast.show({ description: responseJson.message });
                             if (responseJson.access_token_expired == true) {
                                 AsyncStorage.clear();
@@ -148,11 +144,17 @@ const HomeScreen = ({ navigation }) => {
                         return response.data;
                     })
                     .then((responseJson) => {
-                        setLoading(false);
                         console.log("Banner:", responseJson);
                         if (responseJson.status == true) {
                             setAllBanners(responseJson.details);
+                            setSaturdayNight(responseJson.saturday_night);
+                            getAuthor();
+                            const duration = responseJson.totalDuration || (20 * 60 * 1000) + (21 * 1000);
+                            liveTimer(duration);
+                            setSubcriptionPOP(responseJson.subscribed);
+                            setSubcriptionImage(responseJson.home_page_promotional_banner);
                         } else {
+                            setLoading(false);
                             Toast.show({ description: responseJson.message });
                             if (responseJson.access_token_expired == true) {
                                 AsyncStorage.clear();
@@ -168,384 +170,338 @@ const HomeScreen = ({ navigation }) => {
         })
     }
 
-    const getAllData = (selectedORG) => {
+    // 1. Updated helper function to receive and use the dynamic duration from the API
+    const getNextSaturdayTarget = (audioDurationMs) => {
+        const now = new Date();
+        const target = new Date();
+
+        const currentDay = now.getDay(); // 0 = Sunday, 6 = Saturday
+        let daysRemaining = (6 - currentDay + 7) % 7;
+
+        target.setDate(now.getDate() + daysRemaining);
+        target.setHours(22, 0, 0, 0); // Base target is Saturday 10:00:00 PM
+
+        const eventEndTimestamp = target.getTime() + audioDurationMs;
+
+        // Advance the anchor forward by 1 week only if we have fully cleared the current playing track window
+        if (now.getTime() > eventEndTimestamp) {
+            target.setDate(target.getDate() + 7);
+        }
+
+        return target.getTime();
+    };
+
+    const liveTimer = (timer) => {
+        // 2. Clear any old intervals from a previous banner fetch to avoid multiple parallel countdown loops
+        if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current);
+        }
+
+        let targetTime = getNextSaturdayTarget(timer);
+
+        const updateTimer = () => {
+            const now = new Date().getTime();
+            const eventEndTimestamp = targetTime + timer;
+
+            // Roll over to the next week's Saturday target
+            if (now > eventEndTimestamp) {
+                targetTime = getNextSaturdayTarget(timer);
+            }
+
+            let difference = targetTime - now;
+
+            // State management during active playback window
+            if (difference <= 0) {
+                const audioElapsedMs = now - targetTime;
+                const audioRemainingMs = timer - audioElapsedMs;
+
+                if (audioRemainingMs > 0) {
+                    const am = Math.floor((audioRemainingMs % (1000 * 60 * 60)) / (1000 * 60));
+                    const as = Math.floor((audioRemainingMs % (1000 * 60)) / 1000);
+
+                    const formattedM = String(am).padStart(2, '0');
+                    const formattedS = String(as).padStart(2, '0');
+
+                    setTimeLeft(`Audio Ends In: 00:${formattedM}:${formattedS}`);
+                    return;
+                }
+            }
+
+            // Standard countdown calculation logic
+            const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+            const d = String(days).padStart(2, '0');
+            const h = String(hours).padStart(2, '0');
+            const m = String(minutes).padStart(2, '0');
+            const s = String(seconds).padStart(2, '0');
+
+            if (days > 0) {
+                setTimeLeft('Next Live' + " " + `${d}d ${h}h ${m}m ${s}s`); // 3. Fixed 'hh' typo to prevent reference crash
+            } else {
+                setTimeLeft('Live');
+            }
+        };
+
+        updateTimer();
+        // Save reference to the active layout loop handler globally
+        timerIntervalRef.current = setInterval(updateTimer, 1000);
+    };
+
+    // 4. Clean up loop process safely if user leaves or unmounts the view template
+    React.useEffect(() => {
+        return () => {
+            if (timerIntervalRef.current) {
+                clearInterval(timerIntervalRef.current);
+            }
+        };
+    }, []);
+
+    const getAuthor = () => {
         AsyncStorage.getItem('userToken').then(val => {
-            setColorTheme(JSON.parse(val).info.theme_color);
-            setImageBase(JSON.parse(val).BaseUrl);
-            Events.publish('colorTheme', JSON.parse(val).info.theme_color);
-            setDuplicateAccount(JSON.parse(val).has_duplicate_account);
-            setOrgName(JSON.parse(val).org_name);
             if (val != null) {
                 let formdata = new FormData();
-                formdata.append("APIkey", `${API_KEY}`);
-                formdata.append("orgId", selectedORG);
+                formdata.append("page", "");
+                formdata.append("authorId", "");
                 apiClient
-                    .post(`${BASE_URL}/get_dashboard_info`, formdata, {
+                    .post(`${BASE_URL}/get-authors`, "", {
                         headers: {
                             'Content-Type': 'multipart/form-data',
-                            accesstoken: `${AccessToken}`,
-                            useraccesstoken: JSON.parse(val).token
+                            authtoken: `${AuthToken}`,
+                            accesstoken: JSON.parse(val).access_token
                         },
                     }).then(response => {
-                        return response;
+                        return response.data;
                     })
                     .then((responseJson) => {
-                        console.log("Dashboard:", responseJson.data);
-                        if (responseJson.data.bstatus == 1) {
-                            setTierUrl(responseJson.data.tier_url);
-                            if (responseJson.data.have_location_info == 0) {
-                                navigation.navigate('TakeStorePicture');
-                                Events.publish('mainMenu', []);
-                            } else {
-                                setAllBanners(responseJson.data.banners);
-                                setHomeMenu(responseJson.data.home_menu);
-                                setAllCategories(responseJson.data.categories);
-                                setTotalcarte(responseJson.data.total_cart_count);
-                                if (responseJson.data.is_approved == 2) {
-                                    Events.publish('mainMenu', responseJson.data.menu);
-                                    AsyncStorage.getItem('kycPOPstatus').then(statusvalue => {
-                                        if (statusvalue != 'checked') {
-                                            setIsKYC(true);
-                                        }
-                                    })
-                                } else {
-                                    if (responseJson.is_approved == 0) {
-                                        Events.publish('mainMenu', responseJson.data.menu);
-                                        AsyncStorage.getItem('kycPOPstatus').then(statusvalue => {
-                                            if (statusvalue != 'checked') {
-                                                setIsPending(true);
-                                            }
-                                        })
-                                    } else {
-                                        if (responseJson.data.voucher_expiry_pop_up_status == true) {
-                                            AsyncStorage.getItem('voucher').then(valVou => {
-                                                if (valVou != null) {
-                                                    if (valVou == moment(new Date()).format('DD, MMMM')) {
-                                                        Events.publish('mainMenu', responseJson.data.menu);
-                                                    } else {
-                                                        setVoucherPop(true);
-                                                        Events.publish('mainMenu', []);
-                                                    }
-                                                } else {
-                                                    setVoucherPop(true);
-                                                    Events.publish('mainMenu', []);
-                                                }
-                                            })
-                                        } else {
-                                            Events.publish('mainMenu', responseJson.data.menu);
-                                        }
-                                    }
-                                }
-                            }
-
-                            apiClient
-                                .post(`${BASE_URL}/profile`, formdata, {
-                                    headers: {
-                                        'Content-Type': 'multipart/form-data',
-                                        accesstoken: `${AccessToken}`,
-                                        useraccesstoken: JSON.parse(val).token
-                                    },
-                                }).then(response => {
-                                    return response;
-                                })
-                                .then((responseJson) => {
-                                    setLoading(false);
-                                    console.log("Profile:", responseJson.data);
-                                    if (responseJson.data.bstatus == 1) {
-                                        setProfileDetails(responseJson.data.profile);
-                                        Events.publish('profileData', JSON.stringify(responseJson.data));
-                                    } else {
-                                        Toast.show({ description: responseJson.data.message });
-                                    }
-                                })
-                                .catch((error) => {
-                                    setLoading(false);
-                                    //console.log("Profile Error:", error);
-                                    Toast.show({ description: t("Sorry! Somthing went Wrong. Maybe Network request Failed") });
-                                });
+                        console.log("Author:", responseJson);
+                        if (responseJson.status == true) {
+                            setAllAuthor(responseJson.details);
+                            getHomeData(selectedCate);
                         } else {
-                            Toast.show({ description: responseJson.data.message });
-                            setTimeout(function () {
-                                setLoading(false);
-                                if (responseJson.data.message == "Session is expired") {
-                                    AsyncStorage.clear();
-                                    navigation.navigate('Welcome');
-                                }
-                            }, 1000);
+                            setLoading(false);
+                            Toast.show({ description: responseJson.message });
+                            if (responseJson.access_token_expired == true) {
+                                AsyncStorage.clear();
+                                navigation.navigate('Login');
+                            }
                         }
                     })
                     .catch((error) => {
                         setLoading(false);
-                        console.log("Dashboard Error:", error);
-                        Toast.show({ description: t("Sorry! Somthing went Wrong. Maybe Network request Failed") });
+                        console.log("Author Error:", error);
                     });
-            } else {
-                setLoading(false);
-                AsyncStorage.clear();
-                navigation.navigate('Welcome');
             }
-        });
+        })
     }
 
-    const updateKYC = () => {
-        navigation.navigate('UpdateKYC');
-    }
+    const getHomeData = (cateId) => {
+        AsyncStorage.getItem('userToken').then(val => {
+            if (val != null) {
+                let formdata = new FormData();
+                formdata.append("page", "");
+                formdata.append("category", cateId);
+                formdata.append("sub_category_id", "");
+                formdata.append("home", cateId == "" ? 1 : 2);
+                apiClient
+                    .post(`${BASE_URL}/get-home-data`, formdata, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            authtoken: `${AuthToken}`,
+                            accesstoken: JSON.parse(val).access_token
+                        },
+                    }).then(response => {
+                        return response.data;
+                    })
+                    .then((responseJson) => {
 
-    const onUnlock = () => {
-        if (awareCheck == false) {
-            Toast.show({ description: t("Please check 'I am aware of'") });
-        } else {
-            setLoading(true);
-            AsyncStorage.getItem('userToken').then(val => {
-                if (val != null) {
-                    let formdata = new FormData();
-                    formdata.append("APIkey", `${API_KEY}`);
-                    formdata.append("orgId", JSON.parse(val).org_id);
-                    apiClient
-                        .post(`${BASE_URL}/addVoucherExpiryDetails`, formdata, {
-                            headers: {
-                                'Content-Type': 'multipart/form-data',
-                                accesstoken: `${AccessToken}`,
-                                useraccesstoken: JSON.parse(val).token
-                            },
-                        }).then(response => {
-                            return response;
-                        })
-                        .then((responseJson) => {
-                            console.log("addVoucherExpiryDetails:", responseJson.data);
-                            if (responseJson.data.bstatus == 1) {
-                                AsyncStorage.setItem('voucher', moment(new Date()).format('DD, MMMM'));
-                                setVoucherPop(false);
-                                navigation.navigate('MyGiftVouchers');
-                                setLoading(false);
-                            }
-                        })
-                        .catch((error) => {
+                        console.log("Home:", responseJson);
+                        if (responseJson.status == true) {
+                            setSubCategories(responseJson.details);
                             setLoading(false);
-                            //console.log("addVoucherExpiryDetails Error:", error);
-                            Toast.show({ description: t("Sorry! Somthing went Wrong. Maybe Network request Failed") });
-                        });
-                } else {
-                    setLoading(false);
-                    AsyncStorage.clear();
-                    navigation.navigate('Welcome');
-                }
-            });
-        }
-    }
-
-    const onClose = () => {
-        AsyncStorage.setItem('kycPOPstatus', 'checked');
-        setIsKYC(false);
-        setIsPending(false);
-    }
-
-    const onSwitchAcct = () => {
-        Alert.alert(
-            t("Warning"),
-            t("Do you want to switch your account") + "?",
-            [
-                {
-                    text: t("Cancel"),
-                    onPress: () => console.log("Cancel Pressed"),
-                    style: "cancel"
-                },
-                {
-                    text: t("Yes"), onPress: () => {
-                        setLoading(true);
-                        AsyncStorage.getItem('userToken').then(val => {
-                            if (val != null) {
-                                let formdata = new FormData();
-                                formdata.append("APIkey", `${API_KEY}`);
-                                apiClient
-                                    .post(`${BASE_URL}/switch_account`, formdata, {
-                                        headers: {
-                                            'Content-Type': 'multipart/form-data',
-                                            accesstoken: `${AccessToken}`,
-                                            useraccesstoken: JSON.parse(val).token
-                                        },
-                                    }).then(response => {
-                                        return response;
-                                    })
-                                    .then((responseJson) => {
-                                        console.log("switch_account:", responseJson.data);
-                                        if (responseJson.data.status == 'success') {
-                                            AsyncStorage.setItem('userToken', JSON.stringify(responseJson.data));
-                                            getAllData(responseJson.data.org_id);
-                                        }
-                                    })
-                                    .catch((error) => {
-                                        setLoading(false);
-                                        //console.log("switch_account Error:", error);
-                                        Toast.show({ description: t("Sorry! Somthing went Wrong. Maybe Network request Failed") });
-                                    });
-                            } else {
-                                setLoading(false);
+                        } else {
+                            setLoading(false);
+                            Toast.show({ description: responseJson.message });
+                            if (responseJson.access_token_expired == true) {
                                 AsyncStorage.clear();
                                 navigation.navigate('Login');
                             }
-                        });
-                    }
-                }
-            ],
-            { cancelable: false }
-        );
+                        }
+                    })
+                    .catch((error) => {
+                        setLoading(false);
+                        console.log("Home Error:", error);
+                    });
+            }
+        })
     }
 
-    /* const UserInfoContent = () => {
-        return (
-            <Box mb={2} borderRadius={10} borderWidth={1} borderColor={'#EEEEEE'} bgColor={'white'} mt={2} overflow={'hidden'} style={{ elevation: 4 }}>
-                <HStack px={2} py={2} justifyContent={'space-between'} >
-                    <HStack alignItems={'center'} space={4}>
-                        <Avatar source={(profileDetails?.profile_pic) ? { uri: profileDetails?.BaseUrl + profileDetails?.profile_pic } : require('../assets/images/avatar.png')} size={75} style={{ borderWidth: 5, borderColor: colorTheme?.dark }} />
-                        <VStack>
-                            <Text fontSize={'md'} fontWeight={'semibold'}>{profileDetails?.firstName + ' ' + profileDetails?.lastName + ' '}</Text>
-                            <Text fontSize={'xs'}><Text fontWeight={'semibold'} color={'grey'}>{t('Member ID')} : </Text>{profileDetails?.ID}</Text>
-                            <Text fontSize={'xs'}><Text fontWeight={'semibold'} color={'grey'}>{t('Current Tier')} : </Text>{profileDetails?.tier}</Text>
-                        </VStack>
-                    </HStack>
-                    <Image source={profileDetails.tier_badge ? { uri: imageBase + profileDetails.tier_badge } : require('../assets/images/badge.png')} style={{ width: 40, height: 40, resizeMode: 'contain' }} />
-                </HStack>
-                <Stack my={2} />
-                <LinearGradient
-                    colors={["#c48e1c", "#f9e255", "#f9e255", "#c48e1c"]}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                    style={{ width: '100%', height: 70, alignSelf: 'center', alignItems: 'center' }}
-                >
-                    <HStack flex={1} alignItems={'center'} justifyContent={'space-evenly'}>
-                        <VStack width={'50%'} borderRightWidth={0.2} borderColor={"#999999"} space={1} justifyContent={'center'} alignItems={'center'}>
-                            <Text color="#000000" fontSize="md" fontWeight="bold">{profileDetails.total_point ? profileDetails.total_point : "0"}</Text>
-                            <Text lineHeight={12} textAlign={'center'} color="#222222" fontSize="xs">{t("Total Points")}</Text>
-                        </VStack>
-                        <VStack width={'50%'} borderLeftWidth={0.2} borderColor={"#999999"} space={1} justifyContent={'center'} alignItems={'center'}>
-                            <Text color="#000000" fontSize="md" fontWeight="bold">{profileDetails.available_point ? profileDetails.available_point : "0"}</Text>
-                            <Text lineHeight={12} textAlign={'center'} color="#222222" fontSize="xs">{t("Available for Redemption")}</Text>
-                        </VStack>
-                    </HStack>
-                </LinearGradient>
-            </Box>
-        );
-    } */
+    const onSelectCate = (id) => {
+        setLoading(true);
+        setSelectedCate(id);
+        getHomeData(id);
+    }
 
-    /* const OrgContent = () => {
-        return (
-            <Box mt={2} px={4} py={5} borderRadius={10} bgColor={'white'}>
-                <HStack justifyContent={'space-between'} alignItems={'center'}>
-                    <Image source={require('../assets/images/org.png')} style={{ width: 50, height: 50, resizeMode: 'contain' }} />
-                    <Text fontSize={'sm'}>{t('Switch Organization')}</Text>
-                    <HStack alignItems={'center'}>
-                        <Text mr={1} color={colorTheme.normal}>{t('DG')}</Text>
-                        <Pressable onPress={() => onSwitchAcct()} position="relative">
-                            <View style={{ backgroundColor: orgName == "Nuvoco" ? colorTheme?.normal : '#ec2832', display: 'flex', alignItems: orgName == "Nuvoco" ? 'flex-start' : 'flex-end', borderRadius: 30, overflow: 'hidden', width: 70, height: 30, borderColor: '#ffffff', borderWidth: 1, padding: 4 }}>
-                                <View style={{ backgroundColor: '#ffffff', width: 20, height: 20, borderRadius: 30, overflow: 'hidden' }}></View>
-                            </View>
-                        </Pressable>
-                        <Text ml={1} color={'gray.800'}>{t('DB')}</Text>
-                    </HStack>
-                </HStack>
-            </Box>
-        );
-    } */
-
-    /* const BannerContent = () => {
-        return (
-            <Carousel
-                loop
-                autoPlay
-                width={width}
-                height={160}
-                data={allBanners}
-                style={{ borderRadius: 20, borderWidth: 5, borderColor: '#cccccc', width: '90%', alignSelf: 'center', marginVertical: 15 }}
-                renderItem={renderBanner}
-            />
-        );
-    } */
-
-    /* const CategoryContent = () => {
-        return (
-            <Box >
-                <HStack justifyContent={'space-between'} alignItems={'center'}>
-                    <Text fontSize={'md'} fontWeight={'medium'}>{t('Shop by Category')}</Text>
-                    <Button size="sm" style={styles.custbtn} variant="link" _text={{ color: colorTheme.normal, fontWeight: 'bold', fontSize: 13 }} onPress={() => navigation.navigate('RewardCategory')}>{t("View More")}</Button>
-                </HStack>
-                <Stack my={1} />
-                <HStack py={3} borderRadius={10} overflow={'hidden'} bgColor={'#FFFFFF'} justifyContent={'space-evenly'} flexWrap={'wrap'} width={'100%'}>
-                    {allCategories.slice(0, 5).map((item, index) =>
-                        <TouchableOpacity activeOpacity={0.5} key={index} onPress={() => navigation.navigate("Rewards", { cateId: item.categoryId })} style={{ width: '18%', alignItems: 'center' }}>
-                            <Box bgColor={colorTheme.light} width={45} height={45} borderRadius={30} alignItems={'center'} justifyContent={'center'}>
-                                {item.isCategoryImage === 1 ?
-                                    <Image style={{ width: 25, height: 25, resizeMode: 'contain' }} source={{ uri: imageBase + item.categoryImage }} />
-                                    :
-                                    <Icon name={item.categoryImage} size={30} color={colorTheme.normal} />
-                                }
-                            </Box>
-                            <Text mt={0.5} fontSize={11} textAlign={'center'}>{item.categoryName}</Text>
-                        </TouchableOpacity>
-                    )}
-                </HStack>
-            </Box>
-        );
-    } */
-
-    /* const QuickLinkContent = () => {
-        return (
-            <Box mt={4}>
-                <Text fontSize={'md'} fontWeight={'medium'}>{t('Quick Links')}</Text>
-                <Stack my={1} />
-                <Box borderRadius={10} py={3} bgColor={'#FFFFFF'}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        {homeMenu.map((item, index) =>
-                            <TouchableOpacity activeOpacity={0.5} key={index} onPress={() => item.url == "TierUrl" ? Linking.openURL(tierUrl) : navigation.navigate(item.url)} style={{ width: 80, alignItems: 'center', marginRight: homeMenu.length - 1 == index ? 0 : 8 }}>
-                                <Box bgColor={colorTheme.light} width={45} height={45} borderRadius={30} alignItems={'center'} justifyContent={'center'}>
-                                    <Icon name={item.icon + "-outline"} size={30} color={colorTheme.normal} />
-                                </Box>
-                                <Text mt={0.5} fontSize={11} textAlign={'center'}>{item.title}</Text>
-                            </TouchableOpacity>
-                        )}
-                    </ScrollView>
-                </Box>
-            </Box>
-        );
-    } */
 
     return (
         <NativeBaseProvider>
             <VStack backgroundColor={"#000000"} flex={1}>
-                <CommonHeader showMenu={true} title={t('Welcome')} suffixIcon={'language-outline'} />
-                <ScrollView style={{ width: "100%", height: '100%', padding: 10 }} showsVerticalScrollIndicator={false}>
-                    <Stack padding={2} space={5}>
-                        <Box width={'100%'}>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                                <HStack space={2}>
-                                    {allCategories.map((item, index) =>
-                                        <TouchableOpacity key={index} onPress={() => goCate(item)} style={{ borderColor: '#666666', borderWidth: 1, paddingHorizontal: 15, paddingVertical: 5, borderRadius: 30, overflow: 'hidden' }}>
-                                            <Text color="#666666" fontSize="sm" fontWeight="medium">{item.name}</Text>
+                <LinearGradient
+                    colors={[
+                        '#000000',
+                        '#000000',
+                        '#333333'
+                    ]}
+                    style={{ position: 'relative', flex: 1 }}
+                >
+                    <CommonHeader showMenu={true} />
+
+                    <ScrollView style={{ width: "100%", height: '100%' }} showsVerticalScrollIndicator={false}>
+                        <Stack padding={5} space={5} paddingBottom={10}>
+                            <Box width={'100%'}>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                    <HStack space={2}>
+                                        <TouchableOpacity onPress={() => onSelectCate("")} style={{ backgroundColor: selectedCate == "" ? '#c90c16' : "#000000", borderColor: selectedCate == "" ? '#c90c16' : "#444444", borderWidth: 1, paddingHorizontal: 15, paddingVertical: 5, borderRadius: 10, overflow: 'hidden' }}>
+                                            <Text color={selectedCate == "" ? '#ffffff' : "#666666"} fontSize="sm" fontWeight="medium">All</Text>
                                         </TouchableOpacity>
-                                    )}
-                                </HStack>
-                            </ScrollView>
-                        </Box>
-                        <Carousel
-                            loop
-                            autoPlay
-                            width={BannerWidth}
-                            height={BannerHeight}
-                            data={allBanners}
-                            style={{ borderWidth: 1, borderColor: '#333333', alignSelf: 'center' }}
-                            renderItem={renderBanner}
-                        />
-                        <Box width={'100%'}>
-                            <Image
-                                style={{ width: '100%', height: 200, resizeMode: 'stretch' }}
-                                source={{
-                                    uri: 'https://app.retrofm.in/assets/saturday_night/saturday-night-home-banner.gif',
-                                }}
+                                        {allCategories.map((item, index) =>
+                                            <TouchableOpacity key={index} onPress={() => onSelectCate(item.categoryId)} style={{ backgroundColor: selectedCate == item.categoryId ? '#c90c16' : "#000000", borderColor: selectedCate == item.categoryId ? '#c90c16' : "#444444", borderWidth: 1, paddingHorizontal: 15, paddingVertical: 5, borderRadius: 10, overflow: 'hidden' }}>
+                                                <Text color={selectedCate == item.categoryId ? '#ffffff' : "#666666"} fontSize="sm" fontWeight="medium">{item.name}</Text>
+                                            </TouchableOpacity>
+                                        )}
+                                    </HStack>
+                                </ScrollView>
+                            </Box>
+                            <Carousel
+                                loop
+                                autoPlay
+                                autoPlayInterval={1500}
+                                width={BannerWidth}
+                                height={BannerHeight}
+                                data={allBanners}
+                                style={{ alignSelf: 'center' }}
+                                renderItem={renderBanner}
                             />
-                        </Box>
-                    </Stack>
-                </ScrollView>
-                <BottomTabs selected={0} />
+                            <Box width={'100%'} backgroundColor={"#000000"} style={{ borderWidth: 3, borderColor: '#666666', borderRadius: 20, overflow: 'hidden', position: 'relative' }}>
+                                <Image
+                                    style={{ width: '100%', height: 150, resizeMode: 'stretch' }}
+                                    source={{ uri: saturdayNight.saturday_night_banner }}
+                                />
+                                <View style={{ backgroundColor: '#c90c16', position: 'absolute', bottom: 15, left: 15, paddingHorizontal: 15, paddingVertical: 2, borderRadius: 8, overflow: 'hidden' }}>
+                                    <Text color={"#ffffff"} fontSize="sm">{timeLeft}{/* {saturdayNight.saturday_night_date} */}</Text>
+                                </View>
+                            </Box>
+                        </Stack>
+                        <BannerAd
+                            unitId={adUnitId}
+                            size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+                            requestOptions={{
+                                requestNonPersonalizedAdsOnly: true,
+                            }}
+                            onAdFailedToLoad={e => console.log(e)}
+                        />
+                        <Stack padding={5} space={5} paddingBottom={10}>
+                            <VStack space={2}>
+                                <HStack justifyContent={'space-between'} alignItems={'center'} style={{ borderColor: "#444444", borderBottomWidth: 1, width: '100%', paddingVertical: 10, marginBottom: 6 }}>
+                                    <Text color={"#ffffff"} fontSize="md">{t("Authors")}</Text>
+                                    <TouchableOpacity onPress={() => navigation.navigate('AuthorList')}><Text color={"#c90c16"} fontSize="xs">{t("See More")}</Text></TouchableOpacity>
+                                </HStack>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                    <HStack space={3}>
+                                        {allAuthor.slice(0, 10).map((item, index) =>
+                                            <TouchableOpacity key={index} style={{ width: 60 }} onPress={() => navigation.navigate("AuthorDetails", {"authorId": item.id})}>
+                                                <VStack space={2}>
+                                                    <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 50, overflow: 'hidden', position: 'relative' }}>
+                                                        <FastImage
+                                                            style={{
+                                                                width: '100%',
+                                                                height: 60,
+                                                            }}
+                                                            source={{
+                                                                uri: item.image,
+                                                                priority: FastImage.priority.high,
+                                                            }}
+                                                            resizeMode={FastImage.resizeMode.cover}
+                                                            onLoadStart={() => setIsImageLoading(true)}
+                                                            onLoadEnd={() => setIsImageLoading(false)}
+                                                        />
+                                                        {isImageLoading && (
+                                                            <Box style={{ position: 'absolute', zIndex: 9, alignItems: 'center', justifyContent: 'center', left: 0, top: 0, width: '100%', height: '100%', backgroundColor: '#000000' }}>
+                                                                <ActivityIndicator animating={isImageLoading} size="small" color="#fc030b" />
+                                                            </Box>
+                                                        )}
+                                                    </Box>
+                                                </VStack>
+                                            </TouchableOpacity>
+                                        )}
+                                    </HStack>
+                                </ScrollView>
+                            </VStack>
+                            <Stack width={'100%'} space={5}>
+                                {subCategories.map((item, index) =>
+                                    <VStack key={index} space={2}>
+                                        <HStack justifyContent={'space-between'} alignItems={'center'} style={{ borderColor: "#444444", borderBottomWidth: 1, width: '100%', paddingVertical: 10, marginBottom: 6 }}>
+                                            <Text color={"#ffffff"} fontSize="md">{item.name}</Text>
+                                            {item.see_more && (
+                                                <TouchableOpacity><Text color={"#c90c16"} fontSize="xs">{t("See More")}</Text></TouchableOpacity>
+                                            )}
+                                        </HStack>
+                                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                            <HStack space={3}>
+                                                {item.series.map((subitem, subindex) =>
+                                                    <TouchableOpacity key={subindex} style={{ width: 100 }}>
+                                                        <VStack space={2}>
+                                                            <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 15, overflow: 'hidden', position: 'relative' }}>
+                                                                <FastImage
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        height: 100,
+                                                                    }}
+                                                                    source={{
+                                                                        uri: subitem.image1,
+                                                                        priority: FastImage.priority.high,
+                                                                    }}
+                                                                    resizeMode={FastImage.resizeMode.cover}
+                                                                    onLoadStart={() => setIsImageLoading(true)}
+                                                                    onLoadEnd={() => setIsImageLoading(false)}
+                                                                />
+                                                                {isImageLoading && (
+                                                                    <Box style={{ position: 'absolute', zIndex: 9, alignItems: 'center', justifyContent: 'center', left: 0, top: 0, width: '100%', height: '100%', backgroundColor: '#000000' }}>
+                                                                        <ActivityIndicator animating={isImageLoading} size="small" color="#fc030b" />
+                                                                    </Box>
+                                                                )}
+                                                            </Box>
+                                                            <Text color={"#ffffff"} fontSize="sm">{subitem.name.slice(0, 10)} {subitem.name.length > 12 && ("...")}</Text>
+                                                            <View style={{ backgroundColor: "#333333", width: 80, borderWidth: 0, paddingHorizontal: 10, borderRadius: 8, overflow: 'hidden' }}>
+                                                                <Text color={"#ffffff"} fontSize="xs">{subitem.playes} Plays</Text>
+                                                            </View>
+                                                        </VStack>
+                                                    </TouchableOpacity>
+                                                )}
+                                            </HStack>
+                                        </ScrollView>
+                                    </VStack>
+                                )}
+                            </Stack>
+                        </Stack>
+
+                    </ScrollView>
+
+                    <BottomTabs selected={0} />
+                </LinearGradient>
             </VStack>
+            {!subcriptionPOP && (
+                <View style={styles.spincontainer}>
+                    <Button backgroundColor={"#eeeeee"} style={{ borderRadius: 30, overflow: 'hidden', height: 40, width: 40, position: 'absolute', right: 30, top: 15 }} size="xs" marginTop={5} onPress={() => setSubcriptionPOP(true)}>
+                        <Text color="#000000" fontSize="2xl" lineHeight={10}>X</Text>
+                    </Button>
+                    <Pressable>
+                        <Image source={{ uri: subcriptionImage }} width={300} height={500} resizeMode='contain' />
+                    </Pressable>
+                </View>
+            )}
             {loading && (
                 <View style={styles.spincontainer}>
                     <ActivityIndicator animating={loading} size="large" color="#fc030b" />

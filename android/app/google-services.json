@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "515460847442",
+    "project_id": "retrofm-4e78c",
+    "storage_bucket": "retrofm-4e78c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:515460847442:android:6358e0a81fd7b6fbcf0c8b",
+        "android_client_info": {
+          "package_name": "com.retrofm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKXE3ukx9yy2Z_KA6nJrPqeaIyokEfLec"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      },
+      "admob_app_id": "ca-app-pub-7993937625809320~1000239365"
+    }
+  ],
+  "configuration_version": "1"
+}

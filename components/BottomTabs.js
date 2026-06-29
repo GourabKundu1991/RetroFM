@@ -6,15 +6,15 @@ import { t } from 'i18next';
 import { useNavigation } from '@react-navigation/native';
 
 const BottomTabs = ({ selected = 0 }) => {
-    
+
     const navigation = useNavigation();
 
     return (
-        <HStack alignItems="center" safeAreaBottom shadow={6} style={{borderColor: '#333333', borderTopWidth: 1}}>
+        <HStack alignItems="center" /* safeAreaBottom */ style={{ borderColor: '#444444', borderTopWidth: 1 }}>
             <MenuItem
                 name={t('Home')}
                 icon={'home-outline'}
-                selectedIcon={'home'}
+                selectedIcon={'home-outline'}
                 isSelected={selected == 0}
                 color={"#fc030b"}
                 onPress={() => {
@@ -24,21 +24,21 @@ const BottomTabs = ({ selected = 0 }) => {
                 }}
             />
             <MenuItem
-                name={t('Rewards')}
-                icon={'gift-outline'}
-                selectedIcon={'gift'}
+                name={t('My Library')}
+                icon={'book-outline'}
+                selectedIcon={'book-outline'}
                 isSelected={selected == 1}
                 color={"#fc030b"}
                 onPress={() => {
                     if (selected != 1) {
-                        navigation.navigate('RewardCategory');
+                        navigation.navigate('MyLibrary');
                     }
                 }}
             />
             <MenuItem
-                name={t('My Cart')}
-                icon={'bag-handle-outline'}
-                selectedIcon={'bag-handle'}
+                name={t('Language')}
+                icon={'language-outline'}
+                selectedIcon={'language-outline'}
                 isSelected={selected == 2}
                 color={"#fc030b"}
                 onPress={() => {
@@ -48,9 +48,9 @@ const BottomTabs = ({ selected = 0 }) => {
                 }}
             />
             <MenuItem
-                name={t('My Profile')}
-                icon={'person-outline'}
-                selectedIcon={'person'}
+                name={t('Premium')}
+                icon={'diamond-outline'}
+                selectedIcon={'diamond-outline'}
                 isSelected={selected == 3}
                 color={"#fc030b"}
                 onPress={() => {
@@ -68,9 +68,7 @@ const MenuItem = ({ isSelected, name, selectedIcon, icon, onPress, color }) => {
         <Pressable cursor="pointer" opacity={isSelected ? 1 : 0.5} py="3" flex={1} onPress={() => onPress()}>
             <Center>
                 <Icon mb="1" as={<IonIcons name={isSelected ? selectedIcon : icon} />} color={isSelected ? color ?? color : "#cccccc"} size="lg" />
-                {(isSelected) && (
-                    <Box backgroundColor={color} style={{width: 6, height: 6, marginTop: 5}} borderRadius={20} overflow={'hidden'}></Box>
-                )}
+                <Text color={isSelected ? color ?? color : "#cccccc"} fontSize="xs">{name}</Text>
             </Center>
         </Pressable>
     );
