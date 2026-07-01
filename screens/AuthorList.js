@@ -95,7 +95,7 @@ const AuthorListScreen = ({ navigation }) => {
                 >
                     <CommonHeader showBack={true} />
 
-                    <ScrollView style={{ width: "100%", height: '100%' }} showsVerticalScrollIndicator={false}>
+                    <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
 
                         <Stack padding={5} space={5} paddingBottom={10}>
                             <VStack space={2}>

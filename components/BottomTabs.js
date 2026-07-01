@@ -19,7 +19,7 @@ const BottomTabs = ({ selected = 0 }) => {
                 color={"#fc030b"}
                 onPress={() => {
                     if (selected != 0) {
-                        navigation.navigate('Home');
+                        navigation.replace('Home');
                     }
                 }}
             />
@@ -31,7 +31,7 @@ const BottomTabs = ({ selected = 0 }) => {
                 color={"#fc030b"}
                 onPress={() => {
                     if (selected != 1) {
-                        navigation.navigate('MyLibrary');
+                        navigation.replace('MyLibrary');
                     }
                 }}
             />
@@ -43,7 +43,7 @@ const BottomTabs = ({ selected = 0 }) => {
                 color={"#fc030b"}
                 onPress={() => {
                     if (selected != 2) {
-                        navigation.navigate('MyCart');
+                        navigation.replace('Language');
                     }
                 }}
             />
@@ -55,7 +55,7 @@ const BottomTabs = ({ selected = 0 }) => {
                 color={"#fc030b"}
                 onPress={() => {
                     if (selected != 3) {
-                        navigation.navigate('Profile');
+                        navigation.replace('Subscription');
                     }
                 }}
             />

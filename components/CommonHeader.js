@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native'
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next'
 
-const CommonHeader = ({ showBack, onPressBack, showMenu, title, suffixIcon, onPressSuffix, colorTheme, showCart, cartCount }) => {
+const CommonHeader = ({ showBack, onPressBack, showMenu, search, title, suffixIcon, onPressSuffix, colorTheme, showCart, cartCount }) => {
     const { t } = useTranslation();
     const height = Dimensions.get('window').height;
     const navigation = useNavigation();
@@ -31,6 +31,7 @@ const CommonHeader = ({ showBack, onPressBack, showMenu, title, suffixIcon, onPr
                                 <Icon name="menu" size={26} color={'#fc030b'} />
                             </TouchableOpacity>
                         )}
+                        {search != false && (
                         <View style={[styles.inputbox, { width: '65%' }]}>
                             <Input
                                 size="md"
@@ -43,6 +44,7 @@ const CommonHeader = ({ showBack, onPressBack, showMenu, title, suffixIcon, onPr
                                 placeholder={t("Search ....")}
                             />
                         </View>
+                        )}
                         {/* {(title) && (
                             <Text lineHeight={18} fontSize={'md'} color={'#ffffff'}>{title}</Text>
                         )} */}

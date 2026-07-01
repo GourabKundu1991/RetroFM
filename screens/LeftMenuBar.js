@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
+import LinearGradient from 'react-native-linear-gradient';
 
 const LeftMenuBarScreen = () => {
 
@@ -61,8 +62,54 @@ const LeftMenuBarScreen = () => {
 
     return (
         <NativeBaseProvider>
-            <Box flex={1} bg="white" overflow="hidden">
-                {/* {(colorTheme) && (
+            <VStack backgroundColor={"#000000"} flex={1}>
+                <LinearGradient
+                    colors={[
+                        '#111111',
+                        '#333333'
+                    ]}
+                    style={{ position: 'relative', flex: 1 }}
+                >
+                    <ImageBackground source={require('../assets/images/bannerbg.jpeg')}>
+                        <VStack backgroundColor={'rgba(0, 0, 0, 0.8)'} style={{ paddingTop: 50, paddingHorizontal: 10, paddingBottom: 30 }}>
+                            <HStack alignItems={'center'} space={2}>
+                                <Stack>
+                                    <Box justifyContent={'center'} alignItems={'center'} width={90} height={90} borderRadius={45} bgColor={'#FFFFFF'}>
+                                        <Image source={require('../assets/images/noimage.png')} style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 4, borderColor: "#cccccc" }} />
+                                    </Box>
+                                </Stack>
+                                <VStack>
+                                    <Text color={'white'} fontWeight={'bold'}>Gourab Kundu</Text>
+                                    <Text fontSize={'xs'} color={'white'}>{t("ID")}: #RFG6537</Text>
+                                    <Text color={'white'} fontSize={'xs'}>9836790665</Text>
+                                </VStack>
+                            </HStack>
+                        </VStack>
+                    </ImageBackground>
+                    <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
+                        <Stack px={4} mt={5} pb={10}>
+                            {mainMenu.map((item, index) =>
+                                <Pressable key={index} onPress={() => navigation.navigate(item.url)} borderColor="#cccccc" borderBottomWidth="1" paddingY={1.5}>
+                                    <HStack space={5} alignItems="center">
+                                        <Icon name={item.icon} size={16} color="#aaaaaa" />
+                                        <Text color="#000000" width={220} fontSize="xs" textTransform={"capitalize"}>{item.name}</Text>
+                                    </HStack>
+                                </Pressable>
+                            )}
+                            <Pressable onPress={() => onLogout()} paddingY={1.5}>
+                                <HStack space={3} alignItems="center">
+                                    <Icon name="power" size={18} color="#ffffff" />
+                                    <Text color="#ffffff" fontSize="md">{t("Logout")}</Text>
+                                </HStack>
+                            </Pressable>
+                        </Stack>
+                    </ScrollView>
+                    <Box alignItems={'center'} pb={4} pr={2}>
+                        <Image source={require('../assets/images/logo.png')} style={{ width: 120, height: 60, resizeMode: 'contain' }} />
+                    </Box>
+                </LinearGradient>
+            </VStack>
+            {/* {(colorTheme) && (
                     <Stack backgroundColor={colorTheme.normal}>
                         <ImageBackground source={require('../assets/images/back.png')} style={{ paddingTop: 50, paddingHorizontal: 10, paddingBottom: 30 }}>
                             <VStack>
@@ -83,7 +130,7 @@ const LeftMenuBarScreen = () => {
                         </ImageBackground>
                     </Stack>
                 )} */}
-                {/* <ScrollView showsVerticalScrollIndicator={false}>
+            {/* <ScrollView showsVerticalScrollIndicator={false}>
                     <Stack px={4} mt={5} pb={10}>
                         {mainMenu.map((item, index) =>
                             <Pressable key={index} onPress={() => navigation.navigate(item.url)} borderColor="#cccccc" borderBottomWidth="1" paddingY={1.5}>
@@ -106,7 +153,6 @@ const LeftMenuBarScreen = () => {
                         </Box>
                     </ImageBackground>
                 </ScrollView> */}
-            </Box>
         </NativeBaseProvider>
     );
 };

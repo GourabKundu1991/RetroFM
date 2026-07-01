@@ -102,7 +102,7 @@ const AuthorDetailsScreen = ({ navigation, route }) => {
                 >
                     <CommonHeader showBack={true} />
 
-                    <ScrollView style={{ width: "100%", height: '100%' }} showsVerticalScrollIndicator={false}>
+                    <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
                         <ImageBackground source={require('../assets/images/bannerbg.jpeg')} resizeMode="cover" style={styles.bg}></ImageBackground>
                         <HStack paddingHorizontal={10} marginTop={-30} space={3}>
                             <Avatar
@@ -130,33 +130,43 @@ const AuthorDetailsScreen = ({ navigation, route }) => {
                         <Stack padding={5} space={5}>
                             <VStack space={2}>
                                 <HStack justifyContent={'space-between'} alignItems={'center'} style={{ borderColor: "#444444", borderBottomWidth: 1, width: '100%', paddingVertical: 10, marginBottom: 6 }}>
-                                    <Text color={"#ffffff"} fontSize="md">{t("Stories")}</Text>
+                                    <Text color={"#ffffff"} fontSize="lg">{t("Stories")}</Text>
                                 </HStack>
                                 <VStack flexWrap={'wrap'} justifyContent={'center'}>
                                     {storyList.map((item, index) =>
-                                        <Pressable key={index} style={{ width: 120, margin: 10 }}>
-                                            <HStack space={2}>
-                                                <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 30, overflow: 'hidden', position: 'relative' }}>
-                                                    <FastImage
-                                                        style={{
-                                                            width: '100%',
-                                                            height: 120,
-                                                        }}
-                                                        source={{
-                                                            uri: item.image1,
-                                                            priority: FastImage.priority.high,
-                                                        }}
-                                                        resizeMode={FastImage.resizeMode.cover}
-                                                        onLoadStart={() => setIsImageLoading(true)}
-                                                        onLoadEnd={() => setIsImageLoading(false)}
-                                                    />
-                                                    {isImageLoading && (
-                                                        <Box style={{ position: 'absolute', zIndex: 9, alignItems: 'center', justifyContent: 'center', left: 0, top: 0, width: '100%', height: '100%', backgroundColor: '#000000' }}>
-                                                            <ActivityIndicator animating={isImageLoading} size="small" color="#fc030b" />
-                                                        </Box>
-                                                    )}
-                                                </Box>
-                                                <Text color={"#ffffff"} textAlign={'center'} fontWeight={'bold'} fontSize="md">{item.name}</Text>
+                                        <Pressable key={index} style={{ width: '100%', paddingVertical: 15, borderBottomWidth: storyList.length == index + 1 ? 0 : 1, borderColor: '#555555' }}>
+                                            <HStack space={4}>
+                                                <VStack style={{ width: '40%' }}>
+                                                    <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 20, overflow: 'hidden', position: 'relative' }}>
+                                                        <FastImage
+                                                            style={{
+                                                                width: '100%',
+                                                                height: 130,
+                                                            }}
+                                                            source={{
+                                                                uri: item.image1,
+                                                                priority: FastImage.priority.high,
+                                                            }}
+                                                            resizeMode={FastImage.resizeMode.cover}
+                                                            onLoadStart={() => setIsImageLoading(true)}
+                                                            onLoadEnd={() => setIsImageLoading(false)}
+                                                        />
+                                                        {isImageLoading && (
+                                                            <Box style={{ position: 'absolute', zIndex: 9, alignItems: 'center', justifyContent: 'center', left: 0, top: 0, width: '100%', height: '100%', backgroundColor: '#000000' }}>
+                                                                <ActivityIndicator animating={isImageLoading} size="small" color="#fc030b" />
+                                                            </Box>
+                                                        )}
+                                                    </Box>
+                                                </VStack>
+                                                <VStack style={{ width: '50%' }} space={1.5}>
+                                                    <Text color={"#ffffff"} fontSize="sm">{item.name}</Text>
+                                                    <HStack space={2} justifyContent={'center'} alignItems={'center'} style={{ paddingVertical: 1, paddingHorizontal: 5, width: 60, backgroundColor: 'green', overflow: 'hidden', borderRadius: 10 }}>
+                                                        <Text color={"#ffffff"} fontSize="sm" fontWeight={'bold'}>{item.average_rating}</Text>
+                                                        <Icon name="star" size={16} color="yellow" />
+                                                    </HStack>
+                                                    <Text color={"#ffffff"} fontSize="sm">{item.playes} <Text color={"#888888"} fontSize="xs">Plays</Text> <Text color={"#fc030b"} fontSize="xl"> | </Text> {item.total_episode} <Text color={"#888888"} fontSize="xs">Episodes</Text></Text>
+                                                    <Text color={"#ffffff"} lineHeight={18} fontSize="xs">{item.description.slice(0, 90)} {item.description.length > 90 && ("...")}</Text>
+                                                </VStack>
                                             </HStack>
                                         </Pressable>
                                     )}

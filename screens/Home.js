@@ -320,6 +320,7 @@ const HomeScreen = ({ navigation }) => {
                         console.log("Home:", responseJson);
                         if (responseJson.status == true) {
                             setSubCategories(responseJson.details);
+                            Events.publish('mainMenu', responseJson.menu_details);
                             setLoading(false);
                         } else {
                             setLoading(false);
@@ -358,7 +359,7 @@ const HomeScreen = ({ navigation }) => {
                 >
                     <CommonHeader showMenu={true} />
 
-                    <ScrollView style={{ width: "100%", height: '100%' }} showsVerticalScrollIndicator={false}>
+                    <ScrollView style={{ width: "100%"}} showsVerticalScrollIndicator={false}>
                         <Stack padding={5} space={5} paddingBottom={10}>
                             <Box width={'100%'}>
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -445,7 +446,7 @@ const HomeScreen = ({ navigation }) => {
                                         <HStack justifyContent={'space-between'} alignItems={'center'} style={{ borderColor: "#444444", borderBottomWidth: 1, width: '100%', paddingVertical: 10, marginBottom: 6 }}>
                                             <Text color={"#ffffff"} fontSize="md">{item.name}</Text>
                                             {item.see_more && (
-                                                <TouchableOpacity><Text color={"#c90c16"} fontSize="xs">{t("See More")}</Text></TouchableOpacity>
+                                                <TouchableOpacity onPress={() => navigation.navigate("StoryList", {"CateId": item.id})}><Text color={"#c90c16"} fontSize="xs">{t("See More")}</Text></TouchableOpacity>
                                             )}
                                         </HStack>
                                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -497,8 +498,8 @@ const HomeScreen = ({ navigation }) => {
                     <Button backgroundColor={"#eeeeee"} style={{ borderRadius: 30, overflow: 'hidden', height: 40, width: 40, position: 'absolute', right: 30, top: 15 }} size="xs" marginTop={5} onPress={() => setSubcriptionPOP(true)}>
                         <Text color="#000000" fontSize="2xl" lineHeight={10}>X</Text>
                     </Button>
-                    <Pressable>
-                        <Image source={{ uri: subcriptionImage }} width={300} height={500} resizeMode='contain' />
+                    <Pressable onPress={() => navigation.navigate('Subscription')}>
+                        <Image source={{ uri: subcriptionImage }} width={300} height={480} resizeMode='cover' style={{borderRadius: 20, overflow: 'hidden'}} />
                     </Pressable>
                 </View>
             )}

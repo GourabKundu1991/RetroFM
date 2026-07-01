@@ -21,6 +21,11 @@ import HomeScreen from './screens/Home';
 import LeftMenuBarScreen from './screens/LeftMenuBar';
 import AuthorListScreen from './screens/AuthorList';
 import AuthorDetailsScreen from './screens/AuthorDetails';
+import StoryListScreen from './screens/StoryList';
+import SubscriptionScreen from './screens/Subscription';
+import MyLibraryScreen from './screens/MyLibrary';
+import LanguageScreen from './screens/Language';
+
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -43,6 +48,10 @@ function MyStack() {
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="AuthorList" component={AuthorListScreen} />
       <Stack.Screen name="AuthorDetails" component={AuthorDetailsScreen} />
+      <Stack.Screen name="StoryList" component={StoryListScreen} />
+      <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+      <Stack.Screen name="MyLibrary" component={MyLibraryScreen} />
+      <Stack.Screen name="Language" component={LanguageScreen} />
     </Stack.Navigator>
   );
 }

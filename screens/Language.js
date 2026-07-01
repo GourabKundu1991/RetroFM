@@ -17,19 +17,15 @@ const LanguageScreen = ({ navigation }) => {
     const [languageList] = React.useState([
         { "name": "English", "language_code": "Eng" },
         { "name": "हिंदी", "language_code": "Hn" },
-        { "name": "বাংলা", "language_code": "Bn" },
-        { "name": "ଓଡ଼ିଆ", "language_code": "Od" }
+        { "name": "বাংলা", "language_code": "Bn" }
     ]);
     const [currentLanguage, setLanguage] = React.useState('Eng');
     const [loading, setLoading] = React.useState(false);
     const [colorTheme, setColorTheme] = React.useState("");
 
     useEffect(() => {
-        setLoading(true)
         const unsubscribe = navigation.addListener('focus', () => {
-            setTimeout(function () {
-                setLoading(false);
-            }, 500);
+            //setLoading(true);
             AsyncStorage.getItem('language').then(val => {
                 if (val != null) {
                     setLanguage(val);
@@ -44,12 +40,7 @@ const LanguageScreen = ({ navigation }) => {
                         .catch(err => console.log());
                 }
             });
-            AsyncStorage.getItem('userToken').then(val => {
-                if (val != null) {
-                    setColorTheme(JSON.parse(val).info.theme_color);
-                    Events.publish('colorTheme', val.info.theme_color);
-                }
-            });
+            //getAuthor();
         });
         return unsubscribe;
     }, []);
@@ -120,45 +111,41 @@ const LanguageScreen = ({ navigation }) => {
 
     return (
         <NativeBaseProvider>
-            <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-            <CommonHeader
-                navigation={navigation}
-                showBack={true}
-                title={t("Language Change")}
-                colorTheme={colorTheme}
-            />
-            <Box flex={1} px={5} py={5} bg={"#F1F1F1"}>
+            <VStack backgroundColor={"#000000"} flex={1}>
+                <LinearGradient
+                    colors={[
+                        '#000000',
+                        '#000000',
+                        '#333333'
+                    ]}
+                    style={{ position: 'relative', flex: 1 }}
+                >
+                    <CommonHeader showMenu={true} search={false} />
 
-                <Stack flex={1} backgroundColor={'#ffffff'} borderRadius={10} overflow={'hidden'}>
-                    <HStack padding={10} justifyContent={'center'} flexWrap={'wrap'}>
-                        <Image source={require('../assets/images/lang.png')} style={{ width: '100%', height: 150, resizeMode: 'contain' }} />
-                    </HStack>
-                    <ScrollView>
-                        <HStack padding={3} justifyContent={''} flexWrap={'wrap'}>
-                            {languageList.map((item, index) =>
-                                <Pressable style={{ width: '45%', margin: '2%' }} onPress={() => setLanguage(item.language_code)} key={index} justifyContent={'center'} alignItems={'center'} height={100} backgroundColor={item.language_code == currentLanguage ? colorTheme.normal : "#F9F9F9"} borderRadius={10} overflow={'hidden'} borderColor={"#eeeeee"} borderWidth={1}>
-                                    <Text color={item.language_code == currentLanguage ? "#ffffff" : "#111111"} fontSize="2xl" fontWeight="normal">{item.name}</Text>
-                                </Pressable>
-                            )}
-                        </HStack>
+                    <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
+                        <VStack padding={5} space={5}>
+                            <HStack justifyContent={'space-between'} alignItems={'center'} style={{ borderColor: "#444444", borderBottomWidth: 1, width: '100%', paddingVertical: 10, marginBottom: 6 }}>
+                                <Text color={"#ffffff"} fontSize="lg">{t("Select Language")}</Text>
+                            </HStack>
+                            <HStack flexWrap={'wrap'}>
+                                {languageList.map((item, index) =>
+                                    <Pressable style={{ width: '96%', margin: '2%' }} onPress={() => setLanguage(item.language_code)} key={index} justifyContent={'center'} alignItems={'center'} height={80} backgroundColor={"#222222"} borderRadius={30} overflow={'hidden'} borderColor={"#444444"} borderWidth={1}>
+                                        <Text color={item.language_code == currentLanguage ? "#fc030b" : "#999999"} fontSize="xl" lineHeight={30}>{item.name}</Text>
+                                    </Pressable>
+                                )}
+                            </HStack>
+                        </VStack>
                     </ScrollView>
-                    <HStack padding={5} backgroundColor={"#ffffff"} justifyContent={'space-evenly'} alignItems={'center'} flexWrap={'wrap'}>
-                        <Button style={styles.custbtn} backgroundColor={colorTheme.normal} onPress={() => saveLanguage()} marginY={2}>
-                            <Text color="#ffffff" fontSize="md" fontWeight="bold">{t("Save")}</Text>
-                        </Button>
-                    </HStack>
-                </Stack>
-            </Box>
-            <BottomTabs
-                selected={5}
-                colorTheme={colorTheme}
-            />
+
+                    <BottomTabs selected={2} />
+                </LinearGradient>
+            </VStack>
             {loading && (
                 <View style={styles.spincontainer}>
-                    <ActivityIndicator animating={loading} size="large" color="#42bb52" />
+                    <ActivityIndicator animating={loading} size="large" color="#fc030b" />
                 </View>
             )}
-        </NativeBaseProvider >
+        </NativeBaseProvider>
     )
 }
 
