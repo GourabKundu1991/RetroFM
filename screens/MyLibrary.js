@@ -13,7 +13,7 @@ import BottomTabs from '../components/BottomTabs';
 import apiClient from '../api/apiClient';
 import FastImage from 'react-native-fast-image';
 
-const MyLibraryScreen = ({ navigation }) => {
+const MyLibraryScreen = ({ navigation, route }) => {
 
     const { t } = useTranslation();
     const [currentLanguage, setLanguage] = React.useState('Eng');
@@ -93,7 +93,11 @@ const MyLibraryScreen = ({ navigation }) => {
                     ]}
                     style={{ position: 'relative', flex: 1 }}
                 >
-                    <CommonHeader showMenu={true} search={false} />
+                    {route.params.pageroot == true ?
+                        <CommonHeader showMenu={true} search={false} />
+                        :
+                        <CommonHeader showBack={true} search={false} />
+                    }
 
                     <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
                         <VStack padding={5} space={5}>

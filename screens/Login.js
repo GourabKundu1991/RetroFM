@@ -8,7 +8,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { API_KEY, OS_TYPE, APP_VERSION, BASE_URL, AuthToken, DEVICE_TYPE } from '../auth_provider/Config';
 import i18n from '../assets/language/i18n';
 import apiClient from '../api/apiClient';
-import { CountryPicker } from 'react-native-country-codes-picker';
+import { countryCodes, CountryPicker } from 'react-native-country-codes-picker';
 import { OtpInput } from 'react-native-otp-entry';
 
 const LoginScreen = ({ navigation }) => {
@@ -53,10 +53,12 @@ const LoginScreen = ({ navigation }) => {
             .then(responseJson => {
                 console.log('verssion Check:', responseJson);
                 if (responseJson.status == false) {
-                    setLoading(false);
                     AsyncStorage.getItem('userToken').then(val => {
                         if (val != null) {
                             navigation.replace('Home');
+                            setLoading(false);
+                        } else {
+                            setLoading(false);
                         }
                     });
                 } else {
@@ -64,7 +66,7 @@ const LoginScreen = ({ navigation }) => {
                     AsyncStorage.clear();
                     setVersionUpdateTitle(responseJson.update_title);
                     setVersionUpdateMsg(responseJson.update_description);
-                    //setStoreUrl(responseJson.version_details.store_url);
+                    setStoreUrl(responseJson.store_url);
                     setVersionFound(true);
                 }
             })
@@ -73,6 +75,7 @@ const LoginScreen = ({ navigation }) => {
                 setLoading(false);
             });
     }, []);
+
 
     const onContinue = () => {
         Linking.openURL(storeUrl);
@@ -161,6 +164,7 @@ const LoginScreen = ({ navigation }) => {
         formdata.append("phone", phoneNo);
         formdata.append("device_type", `${DEVICE_TYPE}`);
         formdata.append("device_token", serverToken);
+        console.log(formdata);
         apiClient
             .post(`${BASE_URL}/login`, formdata, {
                 headers: {
@@ -235,12 +239,13 @@ const LoginScreen = ({ navigation }) => {
                                             show={show}
                                             // when picker button press you will get the country object with dial code
                                             pickerButtonOnPress={(item) => {
-                                                console.log(JSON.stringify(item));
+                                                console.log(item);
                                                 setCountryCode(item);
                                                 setShow(false);
                                             }}
-                                            showOnly={['UA', 'UK', 'IN']}
+                                            //showOnly={['UA', 'UK', 'IN']}
                                             initialState={countryCode}
+                                            maxHeight={400}
                                         />
                                     </View>
                                     <View style={[styles.inputbox, { width: '73%' }]}>

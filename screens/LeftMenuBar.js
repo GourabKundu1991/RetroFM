@@ -7,6 +7,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
+import { AuthToken, BASE_URL } from '../auth_provider/Config';
+import apiClient from '../api/apiClient';
 
 const LeftMenuBarScreen = () => {
 
@@ -14,27 +16,18 @@ const LeftMenuBarScreen = () => {
 
     const { t } = useTranslation();
     const [currentLanguage, setLanguage] = React.useState('Eng');
-    const [colorTheme, setColorTheme] = React.useState("");
 
     const [mainMenu, setMainMenu] = React.useState([]);
-    const [profileData, setProfileData] = React.useState([]);
+    const [profileData, setProfileData] = React.useState({});
     const [profilePic, setProfilePic] = React.useState("");
-    const [pointData, setPointData] = React.useState([]);
-    const [userType, setUserType] = React.useState("");
 
     useEffect(() => {
         Events.subscribe('mainMenu', (data) => {
             setMainMenu(data);
         });
         Events.subscribe('profileData', (data) => {
-            setProfileData(JSON.parse(data).profile);
-            if (JSON.parse(data).profile.profile_pic) {
-                setProfilePic(JSON.parse(data).profile.BaseUrl + JSON.parse(data).profile.profile_pic);
-            }
-            setPointData(JSON.parse(data).points);
-        });
-        Events.subscribe('colorTheme', (data) => {
-            setColorTheme(data);
+            console.log('profileData: ', data.name);
+            setProfileData(data);
         });
     }, []);
 
@@ -50,9 +43,30 @@ const LeftMenuBarScreen = () => {
                 },
                 {
                     text: t("Yes"), onPress: () => {
-                        AsyncStorage.clear();
-                        navigation.dispatch(DrawerActions.closeDrawer());
-                        navigation.navigate('Welcome');
+                        let formdata = new FormData();
+                        formdata.append("phone", profileData.phone);
+                        apiClient
+                            .post(`${BASE_URL}/log-out`, formdata, {
+                                headers: {
+                                    'Content-Type': 'multipart/form-data',
+                                    authtoken: `${AuthToken}`,
+                                    accesstoken: profileData.access_token
+                                },
+                            }).then(response => {
+                                return response.data;
+                            })
+                            .then((responseJson) => {
+                                console.log("Logout:", responseJson);
+                                if (responseJson.status == true) {
+                                    AsyncStorage.clear();
+                                    navigation.dispatch(DrawerActions.closeDrawer());
+                                    navigation.navigate('Login');
+                                }
+                            })
+                            .catch((error) => {
+                                setLoading(false);
+                                console.log("Logout Error:", error);
+                            });
                     }
                 }
             ],
@@ -71,17 +85,17 @@ const LeftMenuBarScreen = () => {
                     style={{ position: 'relative', flex: 1 }}
                 >
                     <ImageBackground source={require('../assets/images/bannerbg.jpeg')}>
-                        <VStack backgroundColor={'rgba(0, 0, 0, 0.8)'} style={{ paddingTop: 50, paddingHorizontal: 10, paddingBottom: 30 }}>
-                            <HStack alignItems={'center'} space={2}>
-                                <Stack>
+                        <VStack backgroundColor={'rgba(0, 0, 0, 0.8)'} style={{ paddingVertical: 30, paddingHorizontal: 20 }}>
+                            <HStack alignItems={'center'} space={1}>
+                                <Stack width={'35%'}>
                                     <Box justifyContent={'center'} alignItems={'center'} width={90} height={90} borderRadius={45} bgColor={'#FFFFFF'}>
-                                        <Image source={require('../assets/images/noimage.png')} style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 4, borderColor: "#cccccc" }} />
+                                        <Image source={{ uri: profileData.image }} style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 4, borderColor: "#cccccc" }} />
                                     </Box>
                                 </Stack>
-                                <VStack>
-                                    <Text color={'white'} fontWeight={'bold'}>Gourab Kundu</Text>
-                                    <Text fontSize={'xs'} color={'white'}>{t("ID")}: #RFG6537</Text>
-                                    <Text color={'white'} fontSize={'xs'}>9836790665</Text>
+                                <VStack width={'60%'}>
+                                    <Text color={'white'} fontSize={'md'} fontWeight={'bold'}>{profileData.name}</Text>
+                                    <Text fontSize={'xs'} color={'white'} textTransform={'lowercase'}>{profileData.email}</Text>
+                                    <Text color={'white'} fontSize={'xs'}>{profileData.phone}</Text>
                                 </VStack>
                             </HStack>
                         </VStack>
@@ -89,19 +103,10 @@ const LeftMenuBarScreen = () => {
                     <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
                         <Stack px={4} mt={5} pb={10}>
                             {mainMenu.map((item, index) =>
-                                <Pressable key={index} onPress={() => navigation.navigate(item.url)} borderColor="#cccccc" borderBottomWidth="1" paddingY={1.5}>
-                                    <HStack space={5} alignItems="center">
-                                        <Icon name={item.icon} size={16} color="#aaaaaa" />
-                                        <Text color="#000000" width={220} fontSize="xs" textTransform={"capitalize"}>{item.name}</Text>
-                                    </HStack>
+                                <Pressable key={index} onPress={() => item.type == "logout" ? onLogout() : navigation.navigate(item.page_url, {"pageroot": false})} borderColor="#333333" borderBottomWidth="1" padding={3}>
+                                    <Text color="#888888" width={220} fontSize="md" textTransform={"capitalize"}>{item.name}</Text>
                                 </Pressable>
                             )}
-                            <Pressable onPress={() => onLogout()} paddingY={1.5}>
-                                <HStack space={3} alignItems="center">
-                                    <Icon name="power" size={18} color="#ffffff" />
-                                    <Text color="#ffffff" fontSize="md">{t("Logout")}</Text>
-                                </HStack>
-                            </Pressable>
                         </Stack>
                     </ScrollView>
                     <Box alignItems={'center'} pb={4} pr={2}>

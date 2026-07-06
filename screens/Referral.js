@@ -13,7 +13,7 @@ import BottomTabs from '../components/BottomTabs';
 import apiClient from '../api/apiClient';
 import FastImage from 'react-native-fast-image';
 
-const SubscriptionScreen = ({ navigation, route }) => {
+const ReferralScreen = ({ navigation }) => {
 
     const { t } = useTranslation();
     const [currentLanguage, setLanguage] = React.useState('Eng');
@@ -93,60 +93,15 @@ const SubscriptionScreen = ({ navigation, route }) => {
                     ]}
                     style={{ position: 'relative', flex: 1 }}
                 >
-                    {route.params.pageroot == true ?
-                        <CommonHeader showMenu={true} search={false} />
-                        :
-                        <CommonHeader showBack={true} search={false} />
-                    }
+                    <CommonHeader showBack={true} search={false} />
 
                     <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
-                        <VStack padding={8} space={8}>
-                            <LinearGradient
-                                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                                colors={[
-                                    '#009c53',
-                                    '#6bd1a1'
-                                ]}
-                                style={{ position: 'relative', width: '100%', minHeight: 200, borderRadius: 20, overflow: 'hidden' }}
-                            >
-                                <HStack marginTop={5} paddingRight={5} justifyContent={'space-between'} alignItems={'center'}>
-                                    <View style={{ paddingVertical: 5, paddingHorizontal: 8, width: 100, backgroundColor: '#000000', overflow: 'hidden', borderTopRightRadius: 10, borderBottomRightRadius: 10 }}>
-                                        <Text color={"#ffffff"} fontSize="md" textAlign={'center'}>{t("Monthly")}</Text>
-                                    </View>
-                                    <Text color={"#ffffff"} fontSize="md">{t("Validation")}: <Text fontWeight={'bold'}>30 Days</Text></Text>
-                                </HStack>
-                                <Stack padding={5} space={2}>
-                                    <Text marginBottom={2} lineHeight={26} color={"#ffffff"} fontSize="3xl" fontWeight={'bold'}>₹ 99</Text>
-                                    <Text color={"#ffffff"} fontSize="sm">* Listen Ad Free Story</Text>
-                                    <Text color={"#ffffff"} fontSize="sm">* Get 3 Months Free</Text>
-                                    <Text color={"#ffffff"} fontSize="sm">* 35% Off</Text>
-                                </Stack>
-                            </LinearGradient>
-                            <LinearGradient
-                                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                                colors={[
-                                    '#e06c19',
-                                    '#db8b51'
-                                ]}
-                                style={{ position: 'relative', width: '100%', minHeight: 200, borderRadius: 20, overflow: 'hidden' }}
-                            >
-                                <HStack marginTop={5} paddingRight={5} justifyContent={'space-between'} alignItems={'center'}>
-                                    <View style={{ paddingVertical: 5, paddingHorizontal: 8, width: 100, backgroundColor: '#000000', overflow: 'hidden', borderTopRightRadius: 10, borderBottomRightRadius: 10 }}>
-                                        <Text color={"#ffffff"} fontSize="md" textAlign={'center'}>{t("Yearly")}</Text>
-                                    </View>
-                                    <Text color={"#ffffff"} fontSize="md">{t("Validation")}: <Text fontWeight={'bold'}>365 Days</Text></Text>
-                                </HStack>
-                                <Stack padding={5} space={2}>
-                                    <Text marginBottom={2} lineHeight={26} color={"#ffffff"} fontSize="3xl" fontWeight={'bold'}>₹ 399</Text>
-                                    <Text color={"#ffffff"} fontSize="sm">* Listen Ad Free Story</Text>
-                                    <Text color={"#ffffff"} fontSize="sm">* Get 3 Months Free</Text>
-                                    <Text color={"#ffffff"} fontSize="sm">* 35% Off</Text>
-                                </Stack>
-                            </LinearGradient>
+                        <VStack padding={5} space={5}>
+                            <HStack justifyContent={'space-between'} alignItems={'center'} style={{ borderColor: "#444444", borderBottomWidth: 1, width: '100%', paddingVertical: 10, marginBottom: 6 }}>
+                                <Text color={"#ffffff"} fontSize="lg">{t("Referral")}</Text>
+                            </HStack>
                         </VStack>
                     </ScrollView>
-
-                    <BottomTabs selected={3} />
                 </LinearGradient>
             </VStack>
             {loading && (
@@ -164,4 +119,4 @@ const styles = StyleSheet.create({
     spincontainer: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0, 0, 0, 0.9)' },
 });
 
-export default SubscriptionScreen;
+export default ReferralScreen;

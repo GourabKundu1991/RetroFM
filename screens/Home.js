@@ -17,7 +17,7 @@ import BottomTabs from '../components/BottomTabs';
 import apiClient from '../api/apiClient';
 import FastImage from 'react-native-fast-image';
 
-import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads'
+import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 const adUnitId = 'ca-app-pub-7993937625809320/8111248986';
 
 const HomeScreen = ({ navigation }) => {
@@ -44,9 +44,14 @@ const HomeScreen = ({ navigation }) => {
 
     const [isImageLoading, setIsImageLoading] = React.useState(false);
 
+    const [showAd, setShowAd] = React.useState(false);
+
     const [saturdayNight, setSaturdayNight] = React.useState("");
-    const [subcriptionPOP, setSubcriptionPOP] = React.useState(Boolean);
+    const [subcriptionPOP, setSubcriptionPOP] = React.useState(true);
     const [subcriptionImage, setSubcriptionImage] = React.useState("");
+
+    const [searchText, setSearchText] = React.useState("");
+
 
     const goBannerDetails = (dataValue) => {
         if (dataValue.open_type == 1) {
@@ -112,7 +117,7 @@ const HomeScreen = ({ navigation }) => {
                         console.log("Category:", responseJson);
                         if (responseJson.status == true) {
                             setAllCategories(responseJson.details);
-                            getBanner();
+                            getAuthor();
                         } else {
                             setLoading(false);
                             Toast.show({ description: responseJson.message });
@@ -129,12 +134,15 @@ const HomeScreen = ({ navigation }) => {
             }
         })
     }
-    const getBanner = () => {
+
+    const getAuthor = () => {
         AsyncStorage.getItem('userToken').then(val => {
             if (val != null) {
                 let formdata = new FormData();
+                formdata.append("page", "");
+                formdata.append("authorId", "");
                 apiClient
-                    .post(`${BASE_URL}/get-banners`, "", {
+                    .post(`${BASE_URL}/get-authors`, "", {
                         headers: {
                             'Content-Type': 'multipart/form-data',
                             authtoken: `${AuthToken}`,
@@ -144,15 +152,10 @@ const HomeScreen = ({ navigation }) => {
                         return response.data;
                     })
                     .then((responseJson) => {
-                        console.log("Banner:", responseJson);
+                        console.log("Author:", responseJson);
                         if (responseJson.status == true) {
-                            setAllBanners(responseJson.details);
-                            setSaturdayNight(responseJson.saturday_night);
-                            getAuthor();
-                            const duration = responseJson.totalDuration || (20 * 60 * 1000) + (21 * 1000);
-                            liveTimer(duration);
-                            setSubcriptionPOP(responseJson.subscribed);
-                            setSubcriptionImage(responseJson.home_page_promotional_banner);
+                            setAllAuthor(responseJson.details);
+                            getHomeData(selectedCate);
                         } else {
                             setLoading(false);
                             Toast.show({ description: responseJson.message });
@@ -164,7 +167,57 @@ const HomeScreen = ({ navigation }) => {
                     })
                     .catch((error) => {
                         setLoading(false);
-                        console.log("Banner Error:", error);
+                        console.log("Author Error:", error);
+                    });
+            }
+        })
+    }
+
+    const getHomeData = (cateId) => {
+        AsyncStorage.getItem('userToken').then(val => {
+            if (val != null) {
+                Events.publish('profileData', JSON.parse(val));
+                let formdata = new FormData();
+                formdata.append("page", "");
+                formdata.append("category", cateId);
+                formdata.append("sub_category_id", "");
+                formdata.append("home", cateId == "" ? 1 : 2);
+                apiClient
+                    .post(`${BASE_URL}/get-home-data`, formdata, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            authtoken: `${AuthToken}`,
+                            accesstoken: JSON.parse(val).access_token
+                        },
+                    }).then(response => {
+                        return response.data;
+                    })
+                    .then((responseJson) => {
+
+                        console.log("Home:", responseJson);
+                        if (responseJson.status == true) {
+                            setSubCategories(responseJson.details);
+                            Events.publish('mainMenu', responseJson.menu_details);
+                            setAllBanners(responseJson.banner_details);
+                            setSaturdayNight(responseJson.saturday_night);
+                            setLoading(false);
+                            const duration = responseJson.totalDuration || (20 * 60 * 1000) + (21 * 1000);
+                            liveTimer(duration);
+                            setSubcriptionPOP(responseJson.subscribed);
+                            setSubcriptionImage(responseJson.home_page_promotional_banner);
+                            //getBanner();
+                        } else {
+                            setLoading(false);
+                            Toast.show({ description: responseJson.message });
+                            if (responseJson.access_token_expired == true) {
+                                AsyncStorage.clear();
+                                navigation.navigate('Login');
+                            }
+                        }
+                    })
+                    .catch((error) => {
+                        setLoading(false);
+                        console.log("Home Error:", error);
                     });
             }
         })
@@ -259,86 +312,6 @@ const HomeScreen = ({ navigation }) => {
         };
     }, []);
 
-    const getAuthor = () => {
-        AsyncStorage.getItem('userToken').then(val => {
-            if (val != null) {
-                let formdata = new FormData();
-                formdata.append("page", "");
-                formdata.append("authorId", "");
-                apiClient
-                    .post(`${BASE_URL}/get-authors`, "", {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                            authtoken: `${AuthToken}`,
-                            accesstoken: JSON.parse(val).access_token
-                        },
-                    }).then(response => {
-                        return response.data;
-                    })
-                    .then((responseJson) => {
-                        console.log("Author:", responseJson);
-                        if (responseJson.status == true) {
-                            setAllAuthor(responseJson.details);
-                            getHomeData(selectedCate);
-                        } else {
-                            setLoading(false);
-                            Toast.show({ description: responseJson.message });
-                            if (responseJson.access_token_expired == true) {
-                                AsyncStorage.clear();
-                                navigation.navigate('Login');
-                            }
-                        }
-                    })
-                    .catch((error) => {
-                        setLoading(false);
-                        console.log("Author Error:", error);
-                    });
-            }
-        })
-    }
-
-    const getHomeData = (cateId) => {
-        AsyncStorage.getItem('userToken').then(val => {
-            if (val != null) {
-                let formdata = new FormData();
-                formdata.append("page", "");
-                formdata.append("category", cateId);
-                formdata.append("sub_category_id", "");
-                formdata.append("home", cateId == "" ? 1 : 2);
-                apiClient
-                    .post(`${BASE_URL}/get-home-data`, formdata, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                            authtoken: `${AuthToken}`,
-                            accesstoken: JSON.parse(val).access_token
-                        },
-                    }).then(response => {
-                        return response.data;
-                    })
-                    .then((responseJson) => {
-
-                        console.log("Home:", responseJson);
-                        if (responseJson.status == true) {
-                            setSubCategories(responseJson.details);
-                            Events.publish('mainMenu', responseJson.menu_details);
-                            setLoading(false);
-                        } else {
-                            setLoading(false);
-                            Toast.show({ description: responseJson.message });
-                            if (responseJson.access_token_expired == true) {
-                                AsyncStorage.clear();
-                                navigation.navigate('Login');
-                            }
-                        }
-                    })
-                    .catch((error) => {
-                        setLoading(false);
-                        console.log("Home Error:", error);
-                    });
-            }
-        })
-    }
-
     const onSelectCate = (id) => {
         setLoading(true);
         setSelectedCate(id);
@@ -359,8 +332,8 @@ const HomeScreen = ({ navigation }) => {
                 >
                     <CommonHeader showMenu={true} />
 
-                    <ScrollView style={{ width: "100%"}} showsVerticalScrollIndicator={false}>
-                        <Stack padding={5} space={5} paddingBottom={10}>
+                    <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
+                        <Stack padding={5} space={5}>
                             <Box width={'100%'}>
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                                     <HStack space={2}>
@@ -395,14 +368,19 @@ const HomeScreen = ({ navigation }) => {
                                 </View>
                             </Box>
                         </Stack>
-                        <BannerAd
-                            unitId={adUnitId}
-                            size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-                            requestOptions={{
-                                requestNonPersonalizedAdsOnly: true,
-                            }}
-                            onAdFailedToLoad={e => console.log(e)}
-                        />
+                        {showAd && (
+                            <View style={{ marginTop: 5 }}>
+                                <BannerAd
+                                    unitId={adUnitId}
+                                    size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+                                    requestOptions={{
+                                        requestNonPersonalizedAdsOnly: true,
+                                    }}
+                                    onAdLoaded={() => setShowAd(true)}
+                                    onAdFailedToLoad={() => setShowAd(false)}
+                                />
+                            </View>
+                        )}
                         <Stack padding={5} space={5} paddingBottom={10}>
                             <VStack space={2}>
                                 <HStack justifyContent={'space-between'} alignItems={'center'} style={{ borderColor: "#444444", borderBottomWidth: 1, width: '100%', paddingVertical: 10, marginBottom: 6 }}>
@@ -412,7 +390,7 @@ const HomeScreen = ({ navigation }) => {
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                                     <HStack space={3}>
                                         {allAuthor.slice(0, 10).map((item, index) =>
-                                            <TouchableOpacity key={index} style={{ width: 60 }} onPress={() => navigation.navigate("AuthorDetails", {"authorId": item.id})}>
+                                            <TouchableOpacity key={index} style={{ width: 60 }} onPress={() => navigation.navigate("AuthorDetails", { "authorId": item.id })}>
                                                 <VStack space={2}>
                                                     <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 50, overflow: 'hidden', position: 'relative' }}>
                                                         <FastImage
@@ -446,7 +424,7 @@ const HomeScreen = ({ navigation }) => {
                                         <HStack justifyContent={'space-between'} alignItems={'center'} style={{ borderColor: "#444444", borderBottomWidth: 1, width: '100%', paddingVertical: 10, marginBottom: 6 }}>
                                             <Text color={"#ffffff"} fontSize="md">{item.name}</Text>
                                             {item.see_more && (
-                                                <TouchableOpacity onPress={() => navigation.navigate("StoryList", {"CateId": item.id})}><Text color={"#c90c16"} fontSize="xs">{t("See More")}</Text></TouchableOpacity>
+                                                <TouchableOpacity onPress={() => navigation.navigate("StoryList", { "CateId": item.id })}><Text color={"#c90c16"} fontSize="xs">{t("See More")}</Text></TouchableOpacity>
                                             )}
                                         </HStack>
                                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -498,8 +476,8 @@ const HomeScreen = ({ navigation }) => {
                     <Button backgroundColor={"#eeeeee"} style={{ borderRadius: 30, overflow: 'hidden', height: 40, width: 40, position: 'absolute', right: 30, top: 15 }} size="xs" marginTop={5} onPress={() => setSubcriptionPOP(true)}>
                         <Text color="#000000" fontSize="2xl" lineHeight={10}>X</Text>
                     </Button>
-                    <Pressable onPress={() => navigation.navigate('Subscription')}>
-                        <Image source={{ uri: subcriptionImage }} width={300} height={480} resizeMode='cover' style={{borderRadius: 20, overflow: 'hidden'}} />
+                    <Pressable onPress={() => navigation.navigate('MySubscription', { "pageroot": false })}>
+                        <Image source={{ uri: subcriptionImage }} width={300} height={480} resizeMode='cover' style={{ borderRadius: 20, overflow: 'hidden' }} />
                     </Pressable>
                 </View>
             )}

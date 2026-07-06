@@ -25,6 +25,11 @@ import StoryListScreen from './screens/StoryList';
 import SubscriptionScreen from './screens/Subscription';
 import MyLibraryScreen from './screens/MyLibrary';
 import LanguageScreen from './screens/Language';
+import EditProfileScreen from './screens/EditProfile';
+import DownloadScreen from './screens/MyDownload';
+import ReferralScreen from './screens/Referral';
+import AboutScreen from './screens/About';
+import SearchScreen from './screens/Search';
 
 
 const Stack = createStackNavigator();
@@ -49,9 +54,14 @@ function MyStack() {
       <Stack.Screen name="AuthorList" component={AuthorListScreen} />
       <Stack.Screen name="AuthorDetails" component={AuthorDetailsScreen} />
       <Stack.Screen name="StoryList" component={StoryListScreen} />
-      <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+      <Stack.Screen name="MySubscription" component={SubscriptionScreen} />
       <Stack.Screen name="MyLibrary" component={MyLibraryScreen} />
       <Stack.Screen name="Language" component={LanguageScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="MyDownload" component={DownloadScreen} />
+      <Stack.Screen name="Referral" component={ReferralScreen} />
+      <Stack.Screen name="About" component={AboutScreen} />
+      <Stack.Screen name="Search" component={SearchScreen} />
     </Stack.Navigator>
   );
 }
