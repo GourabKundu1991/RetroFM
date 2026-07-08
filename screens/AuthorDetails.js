@@ -46,7 +46,6 @@ const AuthorDetailsScreen = ({ navigation, route }) => {
                 }
             });
             getAuthor();
-            console.log(route.params.authorId)
         });
         return unsubscribe;
     }, []);
@@ -134,7 +133,7 @@ const AuthorDetailsScreen = ({ navigation, route }) => {
                                 </HStack>
                                 <VStack flexWrap={'wrap'} justifyContent={'center'}>
                                     {storyList.map((item, index) =>
-                                        <Pressable key={index} style={{ width: '100%', paddingVertical: 15, borderBottomWidth: storyList.length == index + 1 ? 0 : 1, borderColor: '#555555' }}>
+                                        <Pressable key={index} onPress={() => navigation.navigate("StoryDetails", {"storyID": item.id})} style={{ width: '100%', paddingVertical: 15, borderBottomWidth: storyList.length == index + 1 ? 0 : 1, borderColor: '#555555' }}>
                                             <HStack space={4}>
                                                 <VStack style={{ width: '40%' }}>
                                                     <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 20, overflow: 'hidden', position: 'relative' }}>

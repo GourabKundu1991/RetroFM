@@ -17,9 +17,10 @@ import BottomTabs from '../components/BottomTabs';
 import apiClient from '../api/apiClient';
 import FastImage from 'react-native-fast-image';
 
-const SearchScreen = ({ navigation, route }) => {
+const SearchScreen = ({ navigation }) => {
 
     const { t } = useTranslation();
+    const height = Dimensions.get('window').height;
     const [currentLanguage, setLanguage] = React.useState('Eng');
     const [loading, setLoading] = React.useState(false);
 
@@ -28,7 +29,7 @@ const SearchScreen = ({ navigation, route }) => {
 
     const [isImageLoading, setIsImageLoading] = React.useState(false);
 
-    //const [searchText, setSearchText] = React.useState("");
+    const [searchTerm, setSearchTerm] = React.useState("");
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
@@ -47,30 +48,36 @@ const SearchScreen = ({ navigation, route }) => {
                         .catch(err => console.log());
                 }
             });
-            //getStory(searchText);
         });
         return unsubscribe;
     }, []);
 
-    useEffect(() => {
-        const delay = setTimeout(() => {
-            if (route.params.searchData != "") {
-                setLoading(true);
-                getStory(route.params.searchData);
-            } else {
-                setStoryList([]);
-            }
-        }, 500); // debounce
-    
-        return () => clearTimeout(delay);
-    }, [route.params.searchData]);
+    const onSearch = () => {
+        if (searchTerm.trim() == "") {
+            Toast.show({ description: t("Please type Search Data") });
+        } else {
+            setLoading(true);
+            getStory();
+        }
+    }
 
-    const getStory = (textTerm) => {
+    /* useEffect(() => {
+        getStory("");
+        setLoading(true);
+        if (route.params.searchData != "") {
+            getStory(route.params.searchData);
+        } else {
+            setStoryList([]);
+            setLoading(false);
+        }
+    }); */
+
+    const getStory = () => {
         AsyncStorage.getItem('userToken').then(val => {
             if (val != null) {
                 let formdata = new FormData();
                 formdata.append("page", "1");
-                formdata.append("search_text", textTerm);
+                formdata.append("search_text", searchTerm);
                 apiClient
                     .post(`${BASE_URL}/search-series`, formdata, {
                         headers: {
@@ -88,6 +95,7 @@ const SearchScreen = ({ navigation, route }) => {
                             setStoryList(responseJson.series);
                         } else {
                             setLoading(false);
+                            setStoryList([]);
                             Toast.show({ description: responseJson.message });
                             if (responseJson.access_token_expired == true) {
                                 AsyncStorage.clear();
@@ -113,20 +121,45 @@ const SearchScreen = ({ navigation, route }) => {
                     ]}
                     style={{ position: 'relative', flex: 1 }}
                 >
-                    <CommonHeader showBack={true} page={"Search"} />
+                    <Box style={{ height: height * 0.08, justifyContent: 'center' }}>
+                        <Stack justifyContent={'center'}>
+                            <HStack px={4} justifyContent={'space-between'} alignItems={'center'}>
+                                <HStack alignItems={'center'} width={'100%'} justifyContent={'space-between'}>
+                                    <TouchableOpacity style={{ borderRadius: 15, width: 40, height: 40, backgroundColor: '#222222', justifyContent: 'center', alignItems: 'center' }} onPress={() => navigation.goBack()}>
+                                        <Icon name="arrow-back-outline" size={22} color="#fc030b" />
+                                    </TouchableOpacity>
+
+                                    <View style={[styles.inputbox, { width: '65%' }]}>
+                                        <Input
+                                            size="md"
+                                            style={{ height: 38, color: '#ffffff' }}
+                                            value={searchTerm}
+                                            onChangeText={(text) => setSearchTerm(text)}
+                                            InputRightElement={<Pressable onPress={() => onSearch()}><Icon name="search" size={18} color={'#ffffff'} /></Pressable>}
+                                            variant="unstyled"
+                                            placeholder={t("Search ....")}
+                                        />
+                                    </View>
+                                    <Box style={{ borderRadius: 15, width: 40, height: 40, backgroundColor: '#222222', justifyContent: 'center', alignItems: 'center' }}>
+                                        <Image source={require('../assets/images/logo.png')} style={{ width: 40, height: 40 }} />
+                                    </Box>
+                                </HStack>
+                            </HStack>
+                        </Stack>
+                    </Box>
 
                     <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
                         <Stack padding={5} space={5}>
                             <VStack space={2}>
                                 <VStack flexWrap={'wrap'} justifyContent={'center'}>
                                     {storyList.length == 0 && (
-                                        <VStack space={10} justifyContent={'center'} alignItems={'center'} style={{width: '100%', height: 300, backgroundColor: '#111111', borderRadius: 20, overflow: 'hidden', marginTop: 50}}>
-                                        <Icon name="hourglass-outline" size={50} color="#ffffff" />
-                                        <Text color={"#999999"} fontSize="lg">{t("Sorry!, Nothing Found...")}</Text>
+                                        <VStack space={10} justifyContent={'center'} alignItems={'center'} style={{ width: '100%', height: 300, backgroundColor: '#111111', borderRadius: 20, overflow: 'hidden', marginTop: 50 }}>
+                                            <Icon name="hourglass-outline" size={50} color="#ffffff" />
+                                            <Text color={"#999999"} fontSize="lg">{searchTerm.length != "" ? t("Sorry!, Nothing Found...") : t("Please Search your Story...")}</Text>
                                         </VStack>
                                     )}
                                     {storyList.map((item, index) =>
-                                        <Pressable key={index} style={{ width: '100%', paddingVertical: 15, borderBottomWidth: storyList.length == index + 1 ? 0 : 1, borderColor: '#555555' }}>
+                                        <Pressable key={index} onPress={() => navigation.navigate("StoryDetails", {"storyID": item.id})} style={{ width: '100%', paddingVertical: 15, borderBottomWidth: storyList.length == index + 1 ? 0 : 1, borderColor: '#555555' }}>
                                             <HStack space={4}>
                                                 <VStack style={{ width: '40%' }}>
                                                     <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 20, overflow: 'hidden', position: 'relative' }}>
@@ -180,16 +213,7 @@ const SearchScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-    bg: {
-        width: '100%',
-        height: 180,
-        alignSelf: 'center',
-        resizeMode: 'cover',
-        position: 'relative',
-        opacity: 0.4
-    },
-    noti: { color: '#ffffff', width: 18, height: 18, borderRadius: 20, position: 'absolute', top: -5, right: -3, fontSize: 11, lineHeight: 16, paddingTop: 1, textAlign: 'center', overflow: 'hidden' },
-    linkbox: { borderRadius: 20, width: '30.33%', margin: '1.5%', height: 130, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+    inputbox: { borderRadius: 15, overflow: 'hidden', height: 40, paddingHorizontal: 10, borderWidth: 1, borderColor: '#444444' },
     spincontainer: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0, 0, 0, 0.9)' },
 });
 

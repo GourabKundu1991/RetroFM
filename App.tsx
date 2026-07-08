@@ -30,6 +30,7 @@ import DownloadScreen from './screens/MyDownload';
 import ReferralScreen from './screens/Referral';
 import AboutScreen from './screens/About';
 import SearchScreen from './screens/Search';
+import StoryDetailsScreen from './screens/StoryDetails';
 
 
 const Stack = createStackNavigator();
@@ -62,6 +63,7 @@ function MyStack() {
       <Stack.Screen name="Referral" component={ReferralScreen} />
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="Search" component={SearchScreen} />
+      <Stack.Screen name="StoryDetails" component={StoryDetailsScreen} />
     </Stack.Navigator>
   );
 }

@@ -50,23 +50,11 @@ const HomeScreen = ({ navigation }) => {
     const [subcriptionPOP, setSubcriptionPOP] = React.useState(true);
     const [subcriptionImage, setSubcriptionImage] = React.useState("");
 
-    const [searchText, setSearchText] = React.useState("");
-
-
-    const goBannerDetails = (dataValue) => {
-        if (dataValue.open_type == 1) {
-            if (Platform.OS == "android") {
-                Linking.openURL(dataValue.android_target_link);
-            } else {
-                Linking.openURL(dataValue.ios_target_link);
-            }
-        }
-    }
 
     const renderBanner = ({ item, index }) => {
         return (
             <View key={index}>
-                <TouchableOpacity onPress={() => goBannerDetails(item)} style={{ position: 'relative' }}>
+                <TouchableOpacity onPress={() => navigation.navigate("StoryDetails", {"storyID": item.id})} style={{ position: 'relative' }}>
                     <Image style={{ width: '100%', height: 250, resizeMode: 'stretch' }} source={item.banner_image ? { uri: item.banner_image } : require('../assets/images/noimage.png')} />
                     <Box style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', top: 0, left: 0 }}>
                         <Icon name="play-circle" size={70} color="#ffffff" />
@@ -117,7 +105,7 @@ const HomeScreen = ({ navigation }) => {
                         console.log("Category:", responseJson);
                         if (responseJson.status == true) {
                             setAllCategories(responseJson.details);
-                            getAuthor();
+                            getHomeData(selectedCate);
                         } else {
                             setLoading(false);
                             Toast.show({ description: responseJson.message });
@@ -134,45 +122,7 @@ const HomeScreen = ({ navigation }) => {
             }
         })
     }
-
-    const getAuthor = () => {
-        AsyncStorage.getItem('userToken').then(val => {
-            if (val != null) {
-                let formdata = new FormData();
-                formdata.append("page", "");
-                formdata.append("authorId", "");
-                apiClient
-                    .post(`${BASE_URL}/get-authors`, "", {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                            authtoken: `${AuthToken}`,
-                            accesstoken: JSON.parse(val).access_token
-                        },
-                    }).then(response => {
-                        return response.data;
-                    })
-                    .then((responseJson) => {
-                        console.log("Author:", responseJson);
-                        if (responseJson.status == true) {
-                            setAllAuthor(responseJson.details);
-                            getHomeData(selectedCate);
-                        } else {
-                            setLoading(false);
-                            Toast.show({ description: responseJson.message });
-                            if (responseJson.access_token_expired == true) {
-                                AsyncStorage.clear();
-                                navigation.navigate('Login');
-                            }
-                        }
-                    })
-                    .catch((error) => {
-                        setLoading(false);
-                        console.log("Author Error:", error);
-                    });
-            }
-        })
-    }
-
+    
     const getHomeData = (cateId) => {
         AsyncStorage.getItem('userToken').then(val => {
             if (val != null) {
@@ -198,6 +148,7 @@ const HomeScreen = ({ navigation }) => {
                         if (responseJson.status == true) {
                             setSubCategories(responseJson.details);
                             Events.publish('mainMenu', responseJson.menu_details);
+                            setAllAuthor(responseJson.author_details);
                             setAllBanners(responseJson.banner_details);
                             setSaturdayNight(responseJson.saturday_night);
                             setLoading(false);
@@ -430,7 +381,7 @@ const HomeScreen = ({ navigation }) => {
                                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                                             <HStack space={3}>
                                                 {item.series.map((subitem, subindex) =>
-                                                    <TouchableOpacity key={subindex} style={{ width: 100 }}>
+                                                    <TouchableOpacity key={subindex} onPress={() => navigation.navigate("StoryDetails", {"storyID": subitem.id})} style={{ width: 100 }}>
                                                         <VStack space={2}>
                                                             <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 15, overflow: 'hidden', position: 'relative' }}>
                                                                 <FastImage
@@ -486,109 +437,6 @@ const HomeScreen = ({ navigation }) => {
                     <ActivityIndicator animating={loading} size="large" color="#fc030b" />
                 </View>
             )}
-            {/* <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-            <CommonHeader
-                showMenu={true}
-                title={t('Welcome')}
-                // suffixIcon={'call-outline'}
-                colorTheme={colorTheme}
-            />
-            <Box flex={1} px={2} bg={"#F1F1F1"}>
-                <ScrollView showsVerticalScrollIndicator={false}>
-                    {(profileDetails) && (
-                        <UserInfoContent />
-                    )}
-                    {duplicateAccount.length > 1 && (
-                        <OrgContent />
-                    )}
-                    {(allBanners.length > 0) && (
-                        <BannerContent />
-                    )}
-                    {(allcategories.length > 0) && (
-                        <CategoryContent />
-                    )}
-                    {(homeMenu.length > 0) && (
-                        <QuickLinkContent />
-                    )}
-                    <Stack my={2} />
-                </ScrollView>
-            </Box>
-            <BottomTabs
-                selected={0}
-                colorTheme={colorTheme}
-            />
-            {loading && (
-                <View style={styles.spincontainer}>
-                    <ActivityIndicator animating={loading} size="large" color="#42bb52" />
-                </View>
-            )}
-            {isPending && (
-                <View style={styles.spincontainer}>
-                    <LinearGradient
-                        colors={['#ffffff', "#cccccc"]}
-                        start={{ x: 0.5, y: 0 }}
-                        style={{ width: 300, borderRadius: 10, overflow: 'hidden' }}
-                    >
-                        <VStack space={1} w="100%" paddingX="5" paddingY="10" alignItems="center" justifyContent="center">
-                            <Icon name="hourglass-outline" size={100} color={colorTheme.dark}></Icon>
-                            <Text mt={8} mb={5} fontSize="2xl" fontWeight="bold" color="#111111">{t("Pending")}</Text>
-                            <Text textAlign="center" fontSize="sm" fontWeight="medium" color="#111111" mb={3}>{t("Your EKYC is in Pending Mode. Please click continue to use app")}.</Text>
-                            <Button size="sm" style={{ backgroundColor: colorTheme.dark, width: 180, borderRadius: 8, overflow: 'hidden' }} onPress={() => onClose()} marginY={4}>
-                                <Text color="#ffffff" fontSize="sm" fontWeight="medium">{t("Continue")}</Text>
-                            </Button>
-                        </VStack>
-                    </LinearGradient>
-                </View>
-            )}
-            {isKYC && (
-                <View style={styles.spincontainer}>
-                    <LinearGradient
-                        colors={['#ffffff', "#cccccc"]}
-                        start={{ x: 0.5, y: 0 }}
-                        style={{ width: 300, borderRadius: 10, overflow: 'hidden' }}
-                    >
-                        <VStack space={1} w="100%" paddingX="5" paddingY="10" alignItems="center" justifyContent="center">
-                            <Icon name="warning-outline" size={100} color={colorTheme.dark}></Icon>
-                            <Text mt={8} mb={5} fontSize="2xl" fontWeight="bold" color="#111111">{t("Warning")}</Text>
-                            <Text textAlign="center" fontSize="sm" fontWeight="medium" color="#111111" mb={3}>{t("Your E-KYC Rejected / Not verified. Please click on Update to continue")}.</Text>
-                            <Button size="sm" style={{ backgroundColor: colorTheme.dark, width: 180, borderRadius: 8, overflow: 'hidden' }} onPress={() => updateKYC()} marginY={4}>
-                                <Text color="#ffffff" fontSize="sm" fontWeight="medium">{t("Update")}</Text>
-                            </Button>
-                            <Button size="sm" style={{ backgroundColor: '#999999', width: 180, borderRadius: 8, overflow: 'hidden' }} onPress={() => onClose()} marginBottom={3}>
-                                <Text color="#ffffff" fontSize="sm" fontWeight="medium">{t("Close")}</Text>
-                            </Button>
-                        </VStack>
-                    </LinearGradient>
-                </View>
-            )}
-            {voucherPop && (
-                <View style={styles.spincontainer}>
-                    <LinearGradient
-                        colors={["#ffffff", "#cccccc"]}
-                        start={{ x: 0.5, y: 0 }}
-                        style={{ width: 300, borderRadius: 10, overflow: 'hidden' }}
-                    >
-                        <VStack space={1} w="100%" paddingX="5" paddingY="5" alignItems="center" justifyContent="center">
-                            <Icon name="warning-outline" size={100} color={colorTheme.dark}></Icon>
-                            <Text mt={8} mb={3} fontSize="xl" fontWeight="bold" color="#111111">{t("Voucher Expiry Reminder")} !</Text>
-                            <Text textAlign="center" fontSize="sm" fontWeight="medium" color="#111111" mb={3}>{t("Your Gift Voucher id locked. You can unlock it now and use your gift voucher before it get expired")}.</Text>
-                            <Stack marginY="4" flexWrap="wrap" backgroundColor={"rgba(255,255,255,0.7)"} style={{ paddingHorizontal: 30, paddingVertical: 15, borderRadius: 15, overflow: 'hidden' }}>
-                                <Checkbox colorScheme="orange" shadow={2} onChange={() => setAwareCheck(!awareCheck)} accessibilityLabel="Checkbox">
-                                    {t("I am aware of")}
-                                </Checkbox>
-                            </Stack>
-                            <HStack justifyContent={"space-evenly"} width={"100%"}>
-                                <Button size="sm" variant="outline" style={{ borderColor: '#111111', width: 120, borderRadius: 8, overflow: 'hidden' }} onPress={() => onLogout()} marginY={4}>
-                                    <Text color="#111111" fontSize="sm" fontWeight="medium">{t("Logout")}</Text>
-                                </Button>
-                                <Button size="sm" style={{ backgroundColor: colorTheme.dark, width: 120, borderRadius: 0, overflow: 'hidden' }} onPress={() => onUnlock()} marginY={4}>
-                                    <Text color="#ffffff" fontSize="sm" fontWeight="medium">{t("Unlock Now")}</Text>
-                                </Button>
-                            </HStack>
-                        </VStack>
-                    </LinearGradient>
-                </View>
-            )} */}
         </NativeBaseProvider>
     )
 };
@@ -596,23 +444,7 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     noti: { color: '#ffffff', width: 18, height: 18, borderRadius: 20, position: 'absolute', top: -5, right: -3, fontSize: 11, lineHeight: 16, paddingTop: 1, textAlign: 'center', overflow: 'hidden' },
     linkbox: { borderRadius: 20, width: '30.33%', margin: '1.5%', height: 130, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-    spincontainer: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0, 0, 0, 0.9)' },
-    /* sliderbanner: {
-        //width: '96%',
-        overflow: 'hidden',
-        marginVertical: 15,
-        // borderRadius: 5,
-        // overflow: 'hidden',
-        // borderColor: '#ffffff',
-        // borderWidth: 1,
-        // elevation: 4,
-        // shadowColor: '#000000',
-        // shadowOffset: { width: 0, height: 3 },
-        // shadowOpacity: 0.4,
-        // shadowRadius: 10,
-        // height: 1600,
-        // backgroundColor: '#eeeeee'
-    } */
+    spincontainer: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0, 0, 0, 0.9)' }
 });
 
 export default HomeScreen;
