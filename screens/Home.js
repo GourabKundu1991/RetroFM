@@ -17,8 +17,8 @@ import BottomTabs from '../components/BottomTabs';
 import apiClient from '../api/apiClient';
 import FastImage from 'react-native-fast-image';
 
-import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
-const adUnitId = 'ca-app-pub-7993937625809320/8111248986';
+/* import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
+const adUnitId = 'ca-app-pub-7993937625809320/8111248986'; */
 
 const HomeScreen = ({ navigation }) => {
 
@@ -132,6 +132,7 @@ const HomeScreen = ({ navigation }) => {
                 formdata.append("category", cateId);
                 formdata.append("sub_category_id", "");
                 formdata.append("home", cateId == "" ? 1 : 2);
+                console.log(formdata);
                 apiClient
                     .post(`${BASE_URL}/get-home-data`, formdata, {
                         headers: {
@@ -319,7 +320,7 @@ const HomeScreen = ({ navigation }) => {
                                 </View>
                             </Box>
                         </Stack>
-                        {showAd && (
+                        {/* {showAd && (
                             <View style={{ marginTop: 5 }}>
                                 <BannerAd
                                     unitId={adUnitId}
@@ -331,7 +332,7 @@ const HomeScreen = ({ navigation }) => {
                                     onAdFailedToLoad={() => setShowAd(false)}
                                 />
                             </View>
-                        )}
+                        )} */}
                         <Stack padding={5} space={5} paddingBottom={10}>
                             <VStack space={2}>
                                 <HStack justifyContent={'space-between'} alignItems={'center'} style={{ borderColor: "#444444", borderBottomWidth: 1, width: '100%', paddingVertical: 10, marginBottom: 6 }}>

@@ -32,12 +32,20 @@ import AboutScreen from './screens/About';
 import SearchScreen from './screens/Search';
 import StoryDetailsScreen from './screens/StoryDetails';
 
+import { useEffect } from 'react';
+import { setupPlayer } from './player/TrackPlayerService';
+import { PlayerProvider } from './player/PlayerContext';
+
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
+
+  useEffect(() => {
+    setupPlayer();
+  }, []);
 
   return (
     <SafeAreaProvider>
@@ -72,18 +80,20 @@ function AppContent() {
   const safeAreaInsets = useSafeAreaInsets();
 
   return (
-    <NavigationContainer>
-      <View style={[styles.container, { paddingTop: safeAreaInsets.top, paddingBottom: safeAreaInsets.bottom }]}>
-      <Drawer.Navigator
-          drawerContent={(props) => <LeftMenuBarScreen {...props} />}>
-          <Drawer.Screen
-            name="Welcome"
-            options={{ headerShown: false, swipeEnabled: false }}
-            component={MyStack}
-          />
-        </Drawer.Navigator>
-      </View>
-    </NavigationContainer>
+    <PlayerProvider>
+      <NavigationContainer>
+        <View style={[styles.container, { paddingTop: safeAreaInsets.top, paddingBottom: safeAreaInsets.bottom }]}>
+          <Drawer.Navigator
+            drawerContent={(props) => <LeftMenuBarScreen {...props} />}>
+            <Drawer.Screen
+              name="Welcome"
+              options={{ headerShown: false, swipeEnabled: false }}
+              component={MyStack}
+            />
+          </Drawer.Navigator>
+        </View>
+      </NavigationContainer>
+    </PlayerProvider>
   );
 }
 
