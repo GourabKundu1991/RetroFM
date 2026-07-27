@@ -2,39 +2,38 @@ import TrackPlayer, {
     Capability,
     AppKilledPlaybackBehavior,
   } from 'react-native-track-player';
-  
-  let isPlayerInitialized = false;
-  
-  export const setupPlayer = async () => {
-    if (isPlayerInitialized) return;
 
-        try {
-            await TrackPlayer.setupPlayer();
+let initialized = false;
 
-            await TrackPlayer.updateOptions({
-                android: {
-                    appKilledPlaybackBehavior:
-                        AppKilledPlaybackBehavior.StopPlaybackAndRemoveNotification,
-                },
-                capabilities: [
-                    Capability.Play,
-                    Capability.Pause,
-                    Capability.Stop,
-                ],
-                compactCapabilities: [
-                    Capability.Play,
-                    Capability.Pause,
-                ],
-            });
+export async function setupPlayer() {
+  if (initialized) return;
 
-            isPlayerInitialized = true;
-        } catch (e) {
-            if (
-                e?.message?.includes('already been initialized')
-            ) {
-                isPlayerInitialized = true;
-            } else {
-                throw e;
-            }
-        }
-  };
+  try {
+    await TrackPlayer.setupPlayer();
+
+    await TrackPlayer.updateOptions({
+      capabilities: [
+        Capability.Play,
+        Capability.Pause,
+        Capability.Stop,
+        Capability.SeekTo,
+        Capability.SkipToNext,
+        Capability.SkipToPrevious,
+      ],
+      android: {
+        appKilledPlaybackBehavior:
+          AppKilledPlaybackBehavior.ContinuePlayback,
+      },
+    });
+
+    initialized = true;
+  } catch (e) {
+    if (
+      !e.message?.includes("already been initialized")
+    ) {
+      throw e;
+    }
+
+    initialized = true;
+  }
+}

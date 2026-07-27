@@ -6,7 +6,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import i18n from '../assets/language/i18n';
-import { AccessToken, API_KEY, BASE_URL } from '../auth_provider/Config';
+import { AuthToken, BASE_URL } from '../auth_provider/Config';
 import BottomTabs from '../components/BottomTabs';
 import CommonHeader from '../components/CommonHeader';
 import apiClient from '../api/apiClient';
@@ -14,14 +14,9 @@ import apiClient from '../api/apiClient';
 const LanguageScreen = ({ navigation }) => {
 
     const { t } = useTranslation();
-    const [languageList] = React.useState([
-        { "name": "English", "language_code": "Eng" },
-        { "name": "हिंदी", "language_code": "Hn" },
-        { "name": "বাংলা", "language_code": "Bn" }
-    ]);
-    const [currentLanguage, setLanguage] = React.useState('Eng');
+    const [languageList, setLanguageList] = React.useState([]);
+    const [currentLanguage, setLanguage] = React.useState('en');
     const [loading, setLoading] = React.useState(false);
-    const [colorTheme, setColorTheme] = React.useState("");
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
@@ -40,45 +35,70 @@ const LanguageScreen = ({ navigation }) => {
                         .catch(err => console.log());
                 }
             });
-            //getAuthor();
+            getAllLang();
         });
         return unsubscribe;
     }, []);
 
-    const saveLanguage = () => {
-        if (currentLanguage == '') {
-            Toast.show({ description: t("Please select Language") });
-        } else {
-            onSaveLang();
-        }
-    };
+    const getAllLang = () => {
+        AsyncStorage.getItem('userToken').then(val => {
+            if (val != null) {
+                apiClient
+                    .get(`${BASE_URL}/get-language`, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            authtoken: `${AuthToken}`,
+                            accesstoken: JSON.parse(val).access_token
+                        },
+                    }).then(response => {
+                        return response.data;
+                    })
+                    .then((responseJson) => {
+                        console.log("language:", responseJson);
+                        if (responseJson.status == true) {
+                            setLanguageList(responseJson.details);
+                            setLoading(false);
+                        } else {
+                            setLoading(false);
+                            Toast.show({ description: responseJson.message });
+                            if (responseJson.access_token_expired == true) {
+                                AsyncStorage.clear();
+                                navigation.navigate('Login');
+                            }
+                        }
+                    })
+                    .catch((error) => {
+                        setLoading(false);
+                        console.log("language Error:", error);
+                    });
+            }
+        })
+    }
 
-    const onSaveLang = () => {
+    const onSaveLang = (lang) => {
         setLoading(true);
+        setLanguage(lang.short_form);
         AsyncStorage.getItem('userToken').then(val => {
             if (val != null) {
                 let formdata = new FormData();
-                formdata.append("APIkey", `${API_KEY}`);
-                formdata.append("orgId", JSON.parse(val).org_id);
-                formdata.append("language_code", currentLanguage);
-                console.log("Language formdata:", formdata);
+                formdata.append("language", lang.id);
                 apiClient
-                    .post(`${BASE_URL}/change_profile_language`, formdata, {
+                    .post(`${BASE_URL}/update-user-language`, formdata, {
                         headers: {
                             'Content-Type': 'multipart/form-data',
-                            accesstoken: `${AccessToken}`,
-                            useraccesstoken: JSON.parse(val).token
+                            authtoken: `${AuthToken}`,
+                            accesstoken: JSON.parse(val).access_token
                         },
                     }).then(response => {
-                        return response;
+                        return response.data;
                     })
                     .then((responseJson) => {
                         console.log("Language:", responseJson);
-                        if (responseJson.data.status == 'success') {
-                            Toast.show({ description: responseJson.data.message });
-                            AsyncStorage.setItem('language', currentLanguage);
+                        if (responseJson.status == true) {
+                            Toast.show({ description: responseJson.message });
+                            AsyncStorage.setItem('language', lang.short_form);
                             i18n
-                                .changeLanguage(currentLanguage)
+                                .changeLanguage(lang)
                                 .then(() => setLoading(false))
                                 .catch(err => console.log(err));
                             setTimeout(function () {
@@ -86,20 +106,17 @@ const LanguageScreen = ({ navigation }) => {
                                 navigation.goBack();
                             }, 500);
                         } else {
-                            Toast.show({ description: responseJson.data.message });
-                            setTimeout(function () {
-                                setLoading(false);
-                                if (responseJson.data.msg_code == "msg_1000") {
-                                    AsyncStorage.clear();
-                                    navigation.navigate('Login');
-                                }
-                            }, 1000);
+                            setLoading(false);
+                            Toast.show({ description: responseJson.message });
+                            if (responseJson.access_token_expired == true) {
+                                AsyncStorage.clear();
+                                navigation.navigate('Login');
+                            }
                         }
                     })
                     .catch((error) => {
                         setLoading(false);
                         console.log("Language Error:", error);
-                        Toast.show({ description: t("Sorry! Somthing went Wrong. Maybe Network request Failed") });
                     });
             } else {
                 setLoading(false);
@@ -120,7 +137,7 @@ const LanguageScreen = ({ navigation }) => {
                     ]}
                     style={{ position: 'relative', flex: 1 }}
                 >
-                    <CommonHeader showMenu={true} search={false} />
+                    <CommonHeader showBack={true} search={false} />
 
                     <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
                         <VStack padding={5} space={5}>
@@ -129,8 +146,8 @@ const LanguageScreen = ({ navigation }) => {
                             </HStack>
                             <HStack flexWrap={'wrap'}>
                                 {languageList.map((item, index) =>
-                                    <Pressable style={{ width: '96%', margin: '2%' }} onPress={() => setLanguage(item.language_code)} key={index} justifyContent={'center'} alignItems={'center'} height={80} backgroundColor={"#222222"} borderRadius={30} overflow={'hidden'} borderColor={"#444444"} borderWidth={1}>
-                                        <Text color={item.language_code == currentLanguage ? "#fc030b" : "#999999"} fontSize="xl" lineHeight={30}>{item.name}</Text>
+                                    <Pressable style={{ width: '96%', margin: '2%' }} onPress={() => onSaveLang(item)} key={index} justifyContent={'center'} alignItems={'center'} height={80} backgroundColor={"#222222"} borderRadius={30} overflow={'hidden'} borderColor={"#444444"} borderWidth={1}>
+                                        <Text color={item.short_form == currentLanguage ? "#fc030b" : "#999999"} fontSize="xl" lineHeight={30}>{item.name}</Text>
                                     </Pressable>
                                 )}
                             </HStack>

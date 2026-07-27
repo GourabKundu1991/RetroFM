@@ -41,7 +41,7 @@ const StoryDetailsScreen = ({ navigation, route }) => {
 
     const [isImageLoading, setIsImageLoading] = React.useState(false);
 
-    //let isPlayerInitialized = false;
+    let isPlayerInitialized = false;
 
     const progress = useProgress();
 
@@ -50,11 +50,7 @@ const StoryDetailsScreen = ({ navigation, route }) => {
 
     const [playType, setPlayType] = React.useState("");
 
-    const playbackState = usePlaybackState();
-
-    //const playbackState = TrackPlayer.getPlaybackState();
-
-    //const sleepTimer = useRef(null);
+    const sleepTimer = useRef(null);
 
     /* const {
         loadQueue,
@@ -63,10 +59,12 @@ const StoryDetailsScreen = ({ navigation, route }) => {
         nextTrack,
     } = usePlayer(); */
 
-    /* 
+    /* const playbackState = TrackPlayer.getPlaybackState();
     const track = TrackPlayer.getActiveTrack(); */
 
-    /* const checkCurrentPlayer = async () => {
+    const playbackState = usePlaybackState();
+
+    const checkCurrentPlayer = async () => {
         try {
             const playbackState = await TrackPlayer.getPlaybackState();
             const track = await TrackPlayer.getActiveTrack();
@@ -84,26 +82,32 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                 return;
             } else {
                 console.log("No play running");
-
-                return;
+    
+                    return;
             }
 
 
         } catch (e) {
             console.log(e);
         }
-    }; */
+    };
 
-    /* useFocusEffect(
+    useFocusEffect(
         React.useCallback(() => {
-            checkCurrentPlayer();
+                checkCurrentPlayer();
         }, [])
-    ); */
+    );
 
-    /*  */
+    const togglePlayback = async () => {
+        if (playbackState.state === State.Playing) {
+            await TrackPlayer.pause();
+        } else {
+            await TrackPlayer.play();
+        }
+    };
 
 
-    /* const start = async (storyData) => {
+    const start = async (storyData) => {
         try {
 
             setPlayType("TRAILER");
@@ -122,28 +126,28 @@ const StoryDetailsScreen = ({ navigation, route }) => {
         } catch (e) {
             console.log('Track Player Error:', e);
         }
-    }; */
+    };
 
-    /* const playEpisode = async (item) => {
-
+    const playEpisode = async (item) => {
+        
         setLoading(true);
         TrackPlayer.reset();
 
         setTimeout(async () => {
             try {
                 //await TrackPlayer.reset();
-
+        
                 await TrackPlayer.add({
                     id: item.id.toString(),
                     url: item.audio_url,
                     title: item.name,
-                    artist: item.author_name,
+                    artist: storyDetails.name,
                     artwork: item.play_image,
                 });
-
+        
                 // Wait until track is ready
                 let state = await TrackPlayer.getPlaybackState();
-
+        
                 while (
                     state.state !== State.Ready &&
                     state.state !== State.Paused &&
@@ -152,21 +156,74 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                     await new Promise(resolve => setTimeout(resolve, 100));
                     state = await TrackPlayer.getPlaybackState();
                 }
-
+        
                 await TrackPlayer.play();
-
+        
                 setPlayType("EPISODE");
                 setEpisodID(item.id);
                 setStoryId(route.params.storyID);
 
                 setLoading(false);
-
+        
             } catch (e) {
                 console.log("Play Episode Error:", e);
             }
         }, 500);
+        
+    };
 
-    }; */
+    const seek = async (value) => {
+
+        await TrackPlayer.seekTo(value);
+
+    };
+
+    const formatTime = seconds => {
+
+        if (!seconds) return "00:00";
+
+        const m = Math.floor(seconds / 60);
+
+        const s = Math.floor(seconds % 60);
+
+        return `${m}:${s < 10 ? "0" : ""}${s}`;
+
+    };
+
+    const backward10 = async () => {
+        try {
+            const { position } = await TrackPlayer.getProgress();
+
+            const newPosition = Math.max(position - 10, 0);
+
+            await TrackPlayer.seekTo(newPosition);
+        } catch (error) {
+            console.log("Backward Error:", error);
+        }
+    };
+
+    const forward10 = async () => {
+        try {
+            const { position, duration } = await TrackPlayer.getProgress();
+
+            const newPosition = Math.min(position + 10, duration);
+
+            await TrackPlayer.seekTo(newPosition);
+        } catch (error) {
+            console.log("Forward Error:", error);
+        }
+    };
+
+    useFocusEffect(
+        React.useCallback(() => {
+            return () => {
+                if (playType === "TRAILER") {
+                    TrackPlayer.stop().catch(() => { });
+                    TrackPlayer.reset().catch(() => { });
+                }
+            };
+        }, [playType])
+    );
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
@@ -212,8 +269,7 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                         if (responseJson.status == true) {
                             setStoryDetails(responseJson.details);
                             setEpisodList(responseJson.details.episodes);
-                            //start(responseJson.details);
-                            /* AsyncStorage.getItem('playerData').then(playval => {
+                            AsyncStorage.getItem('playerData').then(playval => {
                                 console.log("playerData:", playval);
                                 if (playval != null) {
                                     console.log();
@@ -227,7 +283,7 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                                         start(responseJson.details);
                                     }, 500);
                                 }
-                            }); */
+                            });
                             setLoading(false);
                         } else {
                             setLoading(false);
@@ -245,108 +301,6 @@ const StoryDetailsScreen = ({ navigation, route }) => {
             }
         })
     }
-
-    useFocusEffect(
-        React.useCallback(() => {
-            return () => {
-                if (playType === "TRAILER") {
-                    TrackPlayer.stop().catch(() => { });
-                    TrackPlayer.reset().catch(() => { });
-                }
-            };
-        }, [playType])
-    );
-
-    const start = async (storyData) => {
-        setPlayType("TRAILER");
-
-        await TrackPlayer.reset();
-
-        await TrackPlayer.add({
-            id: storyData.id.toString(),
-            url: storyData.trailer_audio,
-            title: storyData.name,
-            artist: storyData.author_name,
-            isLiveStream: false,
-        });
-
-        await TrackPlayer.play();
-    };
-
-    const playEpisode = async (item) => {
-        try {
-            await TrackPlayer.stop();
-
-            setPlayType("EPISODE");
-            setEpisodID(item.id);
-            setStoryId(route.params.storyID);
-
-            await TrackPlayer.reset();
-
-            await TrackPlayer.add({
-                id: item.id.toString(),
-                url: item.audio_url,
-                title: item.name,
-                artist: item.author_name,
-                isLiveStream: false,
-            });
-
-            await TrackPlayer.play();
-
-        } catch (e) {
-            console.log("playEpisode Error:", e);
-        }
-    };
-
-    const seek = async (value) => {
-
-        await TrackPlayer.seekTo(value);
-
-    };
-
-    const formatTime = seconds => {
-
-        if (!seconds) return "00:00";
-
-        const m = Math.floor(seconds / 60);
-
-        const s = Math.floor(seconds % 60);
-
-        return `${m}:${s < 10 ? "0" : ""}${s}`;
-
-    };
-
-    const backward10 = async () => {
-        try {
-            const { position } = await TrackPlayer.getProgress();
-
-            const newPosition = Math.max(position - 10, 0);
-
-            await TrackPlayer.seekTo(newPosition);
-        } catch (error) {
-            console.log("Backward Error:", error);
-        }
-    };
-
-    const forward10 = async () => {
-        try {
-            const { position, duration } = await TrackPlayer.getProgress();
-
-            const newPosition = Math.min(position + 10, duration);
-
-            await TrackPlayer.seekTo(newPosition);
-        } catch (error) {
-            console.log("Forward Error:", error);
-        }
-    };
-
-    const togglePlayback = async () => {
-        if (playbackState.state === State.Playing) {
-            await TrackPlayer.pause();
-        } else {
-            await TrackPlayer.play();
-        }
-    };
 
     return (
         <NativeBaseProvider>
@@ -509,7 +463,7 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                                 </Box>
                                 <VStack flexWrap={'wrap'} justifyContent={'center'}>
                                     {episodList.map((item, index) =>
-                                        <Pressable onPress={() => playEpisode(item)} key={index} style={{ width: '100%', paddingVertical: 15, borderBottomWidth: episodList.length == index + 1 ? 0 : 1, borderColor: '#555555' }}>
+                                        <Pressable onPress={() => playEpisode(item, index)} key={index} style={{ width: '100%', paddingVertical: 15, borderBottomWidth: episodList.length == index + 1 ? 0 : 1, borderColor: '#555555' }}>
                                             <HStack space={3} alignItems={'center'}>
                                                 <VStack style={{ width: '25%' }}>
                                                     <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 10, overflow: 'hidden', position: 'relative' }}>
@@ -755,7 +709,7 @@ const styles = StyleSheet.create({
     // ======================
 
 
-    /* playerBox: {
+    playerBox: {
         position: "absolute",
         bottom: 0,
         left: 0,
@@ -805,7 +759,7 @@ const styles = StyleSheet.create({
         color: "#aaa",
         fontSize: 12,
         marginTop: 4,
-    }, */
+    },
 
 
 
@@ -816,7 +770,7 @@ const styles = StyleSheet.create({
     // ======================
 
 
-    /* fullPlayer: {
+    fullPlayer: {
         flex: 1,
         backgroundColor: "#121212",
         padding: 20,
@@ -921,7 +875,7 @@ const styles = StyleSheet.create({
     optionText: {
         color: "#fff",
         fontSize: 16,
-    }, */
+    },
 
 
 });

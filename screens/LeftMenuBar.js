@@ -57,9 +57,9 @@ const LeftMenuBarScreen = () => {
                             })
                             .then((responseJson) => {
                                 console.log("Logout:", responseJson);
+                                navigation.dispatch(DrawerActions.closeDrawer());
                                 if (responseJson.status == true) {
                                     AsyncStorage.clear();
-                                    navigation.dispatch(DrawerActions.closeDrawer());
                                     navigation.navigate('Login');
                                 }
                             })
@@ -103,7 +103,7 @@ const LeftMenuBarScreen = () => {
                     <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
                         <Stack px={4} mt={5} pb={10}>
                             {mainMenu.map((item, index) =>
-                                <Pressable key={index} onPress={() => item.type == "logout" ? onLogout() : navigation.navigate(item.page_url, {"pageroot": false})} borderColor="#333333" borderBottomWidth="1" padding={3}>
+                                <Pressable key={index} onPress={() => item.type == "logout" ? onLogout() : (navigation.navigate(item.page_url), navigation.dispatch(DrawerActions.closeDrawer()))} borderColor="#333333" borderBottomWidth="1" padding={3}>
                                     <Text color="#888888" width={220} fontSize="md" textTransform={"capitalize"}>{item.name}</Text>
                                 </Pressable>
                             )}

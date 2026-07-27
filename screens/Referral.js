@@ -40,19 +40,18 @@ const ReferralScreen = ({ navigation }) => {
                         .catch(err => console.log());
                 }
             });
-            getAuthor();
+            getAllData();
         });
         return unsubscribe;
     }, []);
 
-    const getAuthor = () => {
+    const getAllData = () => {
         AsyncStorage.getItem('userToken').then(val => {
             if (val != null) {
                 let formdata = new FormData();
-                formdata.append("page", "");
-                formdata.append("authorId", "");
+                formdata.append("language", currentLanguage);
                 apiClient
-                    .post(`${BASE_URL}/get-authors`, "", {
+                    .post(`${BASE_URL}/get-referral-details`, formdata, {
                         headers: {
                             'Content-Type': 'multipart/form-data',
                             authtoken: `${AuthToken}`,
@@ -62,9 +61,9 @@ const ReferralScreen = ({ navigation }) => {
                         return response.data;
                     })
                     .then((responseJson) => {
-                        console.log("Author List:", responseJson);
+                        console.log("referral:", responseJson);
                         if (responseJson.status == true) {
-                            setAllAuthor(responseJson.details);
+                            //setAllAuthor(responseJson.details);
                             setLoading(false);
                         } else {
                             setLoading(false);
@@ -77,7 +76,7 @@ const ReferralScreen = ({ navigation }) => {
                     })
                     .catch((error) => {
                         setLoading(false);
-                        console.log("Author List Error:", error);
+                        console.log("referral Error:", error);
                     });
             }
         })

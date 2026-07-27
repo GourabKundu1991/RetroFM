@@ -31,6 +31,7 @@ import ReferralScreen from './screens/Referral';
 import AboutScreen from './screens/About';
 import SearchScreen from './screens/Search';
 import StoryDetailsScreen from './screens/StoryDetails';
+import AboutDetailsScreen from './screens/AboutDetails';
 
 import { useEffect } from 'react';
 import { setupPlayer } from './player/TrackPlayerService';
@@ -68,10 +69,11 @@ function MyStack() {
       <Stack.Screen name="Language" component={LanguageScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="MyDownload" component={DownloadScreen} />
-      <Stack.Screen name="Referral" component={ReferralScreen} />
+      <Stack.Screen name="ReferralPage" component={ReferralScreen} />
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="Search" component={SearchScreen} />
       <Stack.Screen name="StoryDetails" component={StoryDetailsScreen} />
+      <Stack.Screen name="AboutDetails" component={AboutDetailsScreen} />
     </Stack.Navigator>
   );
 }

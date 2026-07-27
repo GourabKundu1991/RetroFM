@@ -93,11 +93,7 @@ const SubscriptionScreen = ({ navigation, route }) => {
                     ]}
                     style={{ position: 'relative', flex: 1 }}
                 >
-                    {route.params.pageroot == true ?
-                        <CommonHeader showMenu={true} search={false} />
-                        :
-                        <CommonHeader showBack={true} search={false} />
-                    }
+                    <CommonHeader showBack={true} search={false} />
 
                     <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
                         <VStack padding={8} space={8}>

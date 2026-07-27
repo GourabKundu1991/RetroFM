@@ -1,6 +1,6 @@
 import { Avatar, Box, Button, Checkbox, HStack, Input, NativeBaseProvider, ScrollView, Stack, Text, Toast, VStack } from 'native-base';
 import React, { useEffect, useRef } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Image, ImageBackground, Keyboard, Linking, Platform, Pressable, StatusBar, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, Image, ImageBackground, Keyboard, Linking, Platform, Pressable, StatusBar, StyleSheet, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { AccessToken, API_KEY, AuthToken, BASE_URL } from '../auth_provider/Config';
 import Carousel from "react-native-reanimated-carousel";
@@ -12,18 +12,20 @@ import CommonHeader from '../components/CommonHeader';
 import BottomTabs from '../components/BottomTabs';
 import apiClient from '../api/apiClient';
 import FastImage from 'react-native-fast-image';
+import RenderHTML from 'react-native-render-html';
 
-const AboutScreen = ({ navigation }) => {
+const AboutDetailsScreen = ({ navigation, route }) => {
 
     const { t } = useTranslation();
     const [currentLanguage, setLanguage] = React.useState('Eng');
     const [loading, setLoading] = React.useState(false);
 
-    const [allAbout, setAllAbout] = React.useState([]);
+    const [details, setDetails] = React.useState("");
+
+    const { width } = useWindowDimensions();
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
-            setLoading(true);
             AsyncStorage.getItem('language').then(val => {
                 if (val != null) {
                     setLanguage(val);
@@ -38,47 +40,12 @@ const AboutScreen = ({ navigation }) => {
                         .catch(err => console.log());
                 }
             });
-            getAllData();
+            setDetails(route.params.detailsItem);
         });
         return unsubscribe;
     }, []);
 
-    const getAllData = () => {
-        AsyncStorage.getItem('userToken').then(val => {
-            if (val != null) {
-                apiClient
-                    .get(`${BASE_URL}/get-settings-data`, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                            authtoken: `${AuthToken}`,
-                            accesstoken: JSON.parse(val).access_token
-                        },
-                    }).then(response => {
-                        return response.data;
-                    })
-                    .then((responseJson) => {
-                        console.log("About:", responseJson);
-                        if (responseJson.status == true) {
-                            const item = responseJson.details.find(item => item.name === "About RetroFM");
 
-                            setAllAbout(item.sub_menu);
-                            setLoading(false);
-                        } else {
-                            setLoading(false);
-                            Toast.show({ description: responseJson.message });
-                            if (responseJson.access_token_expired == true) {
-                                AsyncStorage.clear();
-                                navigation.navigate('Login');
-                            }
-                        }
-                    })
-                    .catch((error) => {
-                        setLoading(false);
-                        console.log("About Error:", error);
-                    });
-            }
-        })
-    }
     return (
         <NativeBaseProvider>
             <VStack backgroundColor={"#000000"} flex={1}>
@@ -95,18 +62,33 @@ const AboutScreen = ({ navigation }) => {
                     <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
                         <VStack padding={5} space={5}>
                             <HStack justifyContent={'space-between'} alignItems={'center'} style={{ borderColor: "#444444", borderBottomWidth: 1, width: '100%', paddingVertical: 10, marginBottom: 6 }}>
-                                <Text color={"#ffffff"} fontSize="lg">{t("About RetroFM")}</Text>
+                                <Text color={"#ffffff"} fontSize="lg">{details.name}</Text>
                             </HStack>
-                        </VStack>
-                        <HStack flexWrap="wrap" justifyContent={'center'} alignItems={'center'}>
-                            {allAbout.map((item, index) =>
-                                <TouchableOpacity key={index} onPress={() => navigation.navigate("AboutDetails", { "detailsItem": item })} style={{ backgroundColor: "#000000", borderColor: "#999999", borderWidth: 1, paddingHorizontal: 15, paddingVertical: 5, borderRadius: 10, overflow: 'hidden', width: 120, margin: 10 }}>
-                                    <VStack space={2} al justifyContent={'center'} alignItems={'center'} height={100}>
-                                        <Text textAlign={'center'} color={"#fc030b"} fontSize="sm" fontWeight="medium">{item.name}</Text>
+                            <VStack style={{ width: '100%', padding: 20, backgroundColor: '#111111', borderRadius: 20, overflow: 'hidden' }}>
+                                {details.type == "array" ?
+                                    <VStack space={5} overflow={'hidden'}>
+                                        <HStack space={5}>
+                                                <Icon name="location-outline" size={30} color={"#fc030b"} />
+                                                <Text fontSize='md' color={"#ffffff"}>{details.details.address}</Text>
+                                            </HStack>
+                                        <Pressable onPress={() => Linking.openURL(`mailto:${details.details.email}`)}>
+                                            <HStack space={5}>
+                                                <Icon name="mail-unread-outline" size={30} color={"#fc030b"} />
+                                                <Text fontSize='lg'  color={"#ffffff"}>{details.details.email}</Text>
+                                            </HStack>
+                                        </Pressable>
+                                        <Pressable onPress={() => Linking.openURL(`tel:${details.details.phone}`)}>
+                                            <HStack space={5}>
+                                                <Icon name="call-outline" size={30} color={"#fc030b"} />
+                                                <Text fontSize='lg' color={"#ffffff"}>{details.details.phone}</Text>
+                                            </HStack>
+                                        </Pressable>
                                     </VStack>
-                                </TouchableOpacity>
-                            )}
-                        </HStack>
+                                    :
+                                    <RenderHTML contentWidth={width} baseStyle={{ color: '#999999', fontSize: 14 }} source={{ html: details.description }} />
+                                }
+                            </VStack>
+                        </VStack>
                     </ScrollView>
                 </LinearGradient>
             </VStack>
@@ -125,4 +107,4 @@ const styles = StyleSheet.create({
     spincontainer: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0, 0, 0, 0.9)' },
 });
 
-export default AboutScreen;
+export default AboutDetailsScreen;

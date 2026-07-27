@@ -19,7 +19,7 @@ const BottomTabs = ({ selected = 0 }) => {
                 color={"#fc030b"}
                 onPress={() => {
                     if (selected != 0) {
-                        navigation.replace('Home', {"pageroot": true});
+                        navigation.navigate('Home');
                     }
                 }}
             />
@@ -31,7 +31,7 @@ const BottomTabs = ({ selected = 0 }) => {
                 color={"#fc030b"}
                 onPress={() => {
                     if (selected != 1) {
-                        navigation.replace('MyLibrary', {"pageroot": true});
+                        navigation.navigate('MyLibrary');
                     }
                 }}
             />
@@ -43,7 +43,7 @@ const BottomTabs = ({ selected = 0 }) => {
                 color={"#fc030b"}
                 onPress={() => {
                     if (selected != 2) {
-                        navigation.replace('Language', {"pageroot": true});
+                        navigation.navigate('Language');
                     }
                 }}
             />
@@ -55,7 +55,7 @@ const BottomTabs = ({ selected = 0 }) => {
                 color={"#fc030b"}
                 onPress={() => {
                     if (selected != 3) {
-                        navigation.replace('MySubscription', {"pageroot": true});
+                        navigation.navigate('MySubscription');
                     }
                 }}
             />

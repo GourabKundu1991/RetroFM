@@ -19,8 +19,7 @@ const MyLibraryScreen = ({ navigation, route }) => {
     const [currentLanguage, setLanguage] = React.useState('Eng');
     const [loading, setLoading] = React.useState(false);
 
-    const [allAuthor, setAllAuthor] = React.useState([]);
-
+    const [allList, setAllList] = React.useState([]);
     const [isImageLoading, setIsImageLoading] = React.useState(false);
 
     useEffect(() => {
@@ -40,19 +39,16 @@ const MyLibraryScreen = ({ navigation, route }) => {
                         .catch(err => console.log());
                 }
             });
-            getAuthor();
+            getAllData();
         });
         return unsubscribe;
     }, []);
 
-    const getAuthor = () => {
+    const getAllData = () => {
         AsyncStorage.getItem('userToken').then(val => {
             if (val != null) {
-                let formdata = new FormData();
-                formdata.append("page", "");
-                formdata.append("authorId", "");
                 apiClient
-                    .post(`${BASE_URL}/get-authors`, "", {
+                    .get(`${BASE_URL}/get-user-favourite-series`, {
                         headers: {
                             'Content-Type': 'multipart/form-data',
                             authtoken: `${AuthToken}`,
@@ -62,11 +58,12 @@ const MyLibraryScreen = ({ navigation, route }) => {
                         return response.data;
                     })
                     .then((responseJson) => {
-                        console.log("Author List:", responseJson);
+                        console.log("Favourite List:", responseJson);
                         if (responseJson.status == true) {
-                            setAllAuthor(responseJson.details);
+                            setAllList(responseJson.details);
                             setLoading(false);
                         } else {
+                            setAllList([]);
                             setLoading(false);
                             Toast.show({ description: responseJson.message });
                             if (responseJson.access_token_expired == true) {
@@ -77,7 +74,7 @@ const MyLibraryScreen = ({ navigation, route }) => {
                     })
                     .catch((error) => {
                         setLoading(false);
-                        console.log("Author List Error:", error);
+                        console.log("Favourite List Error:", error);
                     });
             }
         })
@@ -93,17 +90,58 @@ const MyLibraryScreen = ({ navigation, route }) => {
                     ]}
                     style={{ position: 'relative', flex: 1 }}
                 >
-                    {route.params.pageroot == true ?
-                        <CommonHeader showMenu={true} search={false} />
-                        :
-                        <CommonHeader showBack={true} search={false} />
-                    }
+
+                    <CommonHeader showBack={true} search={false} />
 
                     <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
                         <VStack padding={5} space={5}>
                             <HStack justifyContent={'space-between'} alignItems={'center'} style={{ borderColor: "#444444", borderBottomWidth: 1, width: '100%', paddingVertical: 10, marginBottom: 6 }}>
                                 <Text color={"#ffffff"} fontSize="lg">{t("My Library")}</Text>
                             </HStack>
+                            {allList.length == 0 && (
+                                <VStack justifyContent={'center'} alignItems={'center'} style={{ width: '100%', height: 300, backgroundColor: '#111111', borderRadius: 20, overflow: 'hidden', paddingVertical: 20 }}>
+                                    <Text textAlign={'center'} color={"#666666"} fontSize="sm" fontWeight="medium">{t("No Record Found")}</Text>
+                                </VStack>
+                            )}
+                            <VStack flexWrap={'wrap'} justifyContent={'center'}>
+                                {allList.map((item, index) =>
+                                    <Pressable key={index} onPress={() => navigation.navigate("StoryDetails", { "storyID": item.id })} style={{ width: '100%', paddingVertical: 15, borderBottomWidth: storyList.length == index + 1 ? 0 : 1, borderColor: '#555555' }}>
+                                        <HStack space={4}>
+                                            <VStack style={{ width: '40%' }}>
+                                                <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 20, overflow: 'hidden', position: 'relative' }}>
+                                                    <FastImage
+                                                        style={{
+                                                            width: '100%',
+                                                            height: 130,
+                                                        }}
+                                                        source={{
+                                                            uri: item.image1,
+                                                            priority: FastImage.priority.high,
+                                                        }}
+                                                        resizeMode={FastImage.resizeMode.cover}
+                                                        onLoadStart={() => setIsImageLoading(true)}
+                                                        onLoadEnd={() => setIsImageLoading(false)}
+                                                    />
+                                                    {isImageLoading && (
+                                                        <Box style={{ position: 'absolute', zIndex: 9, alignItems: 'center', justifyContent: 'center', left: 0, top: 0, width: '100%', height: '100%', backgroundColor: '#000000' }}>
+                                                            <ActivityIndicator animating={isImageLoading} size="small" color="#fc030b" />
+                                                        </Box>
+                                                    )}
+                                                </Box>
+                                            </VStack>
+                                            <VStack style={{ width: '50%' }} space={1.5}>
+                                                <Text color={"#ffffff"} fontSize="sm">{item.name}</Text>
+                                                <HStack space={2} justifyContent={'center'} alignItems={'center'} style={{ paddingVertical: 1, paddingHorizontal: 5, width: 60, backgroundColor: 'green', overflow: 'hidden', borderRadius: 10 }}>
+                                                    <Text color={"#ffffff"} fontSize="sm" fontWeight={'bold'}>{item.average_rating}</Text>
+                                                    <Icon name="star" size={16} color="yellow" />
+                                                </HStack>
+                                                <Text color={"#ffffff"} fontSize="sm">{item.playes} <Text color={"#888888"} fontSize="xs">Plays</Text> <Text color={"#fc030b"} fontSize="xl"> | </Text> {item.total_episode} <Text color={"#888888"} fontSize="xs">Episodes</Text></Text>
+                                                <Text color={"#ffffff"} lineHeight={18} fontSize="xs">{item.description.slice(0, 90)} {item.description.length > 90 && ("...")}</Text>
+                                            </VStack>
+                                        </HStack>
+                                    </Pressable>
+                                )}
+                            </VStack>
                         </VStack>
                     </ScrollView>
 

@@ -31,9 +31,11 @@ const SearchScreen = ({ navigation }) => {
 
     const [searchTerm, setSearchTerm] = React.useState("");
 
+    const [allCategories, setAllCategories] = React.useState([]);
+
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
-            //setLoading(true);
+            setLoading(true);
             AsyncStorage.getItem('language').then(val => {
                 if (val != null) {
                     setLanguage(val);
@@ -48,9 +50,47 @@ const SearchScreen = ({ navigation }) => {
                         .catch(err => console.log());
                 }
             });
+            getAllCate();
         });
         return unsubscribe;
     }, []);
+
+    const getAllCate = () => {
+        AsyncStorage.getItem('userToken').then(val => {
+            if (val != null) {
+                let formdata = new FormData();
+                formdata.append("location", "");
+                apiClient
+                    .post(`${BASE_URL}/get-all-category`, formdata, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            authtoken: `${AuthToken}`,
+                            accesstoken: JSON.parse(val).access_token
+                        },
+                    }).then(response => {
+                        return response.data;
+                    })
+                    .then((responseJson) => {
+                        console.log("Category:", responseJson);
+                        if (responseJson.status == true) {
+                            setAllCategories(responseJson.details);
+                            setLoading(false);
+                        } else {
+                            setLoading(false);
+                            Toast.show({ description: responseJson.message });
+                            if (responseJson.access_token_expired == true) {
+                                AsyncStorage.clear();
+                                navigation.navigate('Login');
+                            }
+                        }
+                    })
+                    .catch((error) => {
+                        setLoading(false);
+                        console.log("Category Error:", error);
+                    });
+            }
+        })
+    }
 
     const onSearch = () => {
         if (searchTerm.trim() == "") {
@@ -60,17 +100,6 @@ const SearchScreen = ({ navigation }) => {
             getStory();
         }
     }
-
-    /* useEffect(() => {
-        getStory("");
-        setLoading(true);
-        if (route.params.searchData != "") {
-            getStory(route.params.searchData);
-        } else {
-            setStoryList([]);
-            setLoading(false);
-        }
-    }); */
 
     const getStory = () => {
         AsyncStorage.getItem('userToken').then(val => {
@@ -93,6 +122,7 @@ const SearchScreen = ({ navigation }) => {
                         if (responseJson.status == true) {
                             setLoading(false);
                             setStoryList(responseJson.series);
+                            Toast.show({ description: responseJson.message });
                         } else {
                             setLoading(false);
                             setStoryList([]);
@@ -151,15 +181,24 @@ const SearchScreen = ({ navigation }) => {
                     <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
                         <Stack padding={5} space={5}>
                             <VStack space={2}>
-                                <VStack flexWrap={'wrap'} justifyContent={'center'}>
+                                <VStack flexWrap={'wrap'} justifyContent={'center'} alignItems={'center'}>
                                     {storyList.length == 0 && (
-                                        <VStack space={10} justifyContent={'center'} alignItems={'center'} style={{ width: '100%', height: 300, backgroundColor: '#111111', borderRadius: 20, overflow: 'hidden', marginTop: 50 }}>
-                                            <Icon name="hourglass-outline" size={50} color="#ffffff" />
-                                            <Text color={"#999999"} fontSize="lg">{searchTerm.length != "" ? t("Sorry!, Nothing Found...") : t("Please Search your Story...")}</Text>
+                                        <VStack space={10} justifyContent={'center'} alignItems={'center'} style={{ width: '100%', backgroundColor: '#111111', borderRadius: 20, overflow: 'hidden', marginTop: 50, paddingVertical: 20 }}>
+                                            <HStack flexWrap="wrap" justifyContent={'center'} alignItems={'center'}>
+                                                {allCategories.map((item, index) =>
+                                                    <TouchableOpacity key={index} onPress={() => navigation.navigate("StoryList", { "CateId": item.id })}  style={{ backgroundColor: "#000000", borderColor: "#444444", borderWidth: 1, paddingHorizontal: 15, paddingVertical: 5, borderRadius: 10, overflow: 'hidden', width: 120, margin: 10 }}>
+                                                        <VStack space={2} al justifyContent={'center'} alignItems={'center'} height={100}>
+                                                            <Image source={{uri: item.image}} style={{ width: 35, height: 35 }} />
+                                                            <Text textAlign={'center'} color={"#666666"} fontSize="sm" fontWeight="medium">{item.name}</Text>
+                                                        </VStack>
+                                                        
+                                                    </TouchableOpacity>
+                                                )}
+                                            </HStack>
                                         </VStack>
                                     )}
                                     {storyList.map((item, index) =>
-                                        <Pressable key={index} onPress={() => navigation.navigate("StoryDetails", {"storyID": item.id})} style={{ width: '100%', paddingVertical: 15, borderBottomWidth: storyList.length == index + 1 ? 0 : 1, borderColor: '#555555' }}>
+                                        <Pressable key={index} onPress={() => navigation.navigate("StoryDetails", { "storyID": item.id })} style={{ width: '100%', paddingVertical: 15, borderBottomWidth: storyList.length == index + 1 ? 0 : 1, borderColor: '#555555' }}>
                                             <HStack space={4}>
                                                 <VStack style={{ width: '40%' }}>
                                                     <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 20, overflow: 'hidden', position: 'relative' }}>
