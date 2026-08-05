@@ -6,7 +6,7 @@
  */
 
 import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+import { AppState, StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
@@ -15,6 +15,8 @@ import {
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import LoginScreen from './screens/Login';
 import HomeScreen from './screens/Home';
@@ -36,6 +38,7 @@ import AboutDetailsScreen from './screens/AboutDetails';
 import { useEffect } from 'react';
 import { setupPlayer } from './player/TrackPlayerService';
 import { PlayerProvider } from './player/PlayerContext';
+import TrackPlayer from 'react-native-track-player';
 
 
 const Stack = createStackNavigator();
@@ -46,6 +49,20 @@ function App() {
 
   useEffect(() => {
     setupPlayer();
+    AsyncStorage.removeItem('playerData');
+  }, []);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener(
+      'change',
+      async (nextState) => {
+        if (nextState === 'background') {
+          await TrackPlayer.stop();
+        }
+      }
+    );
+  
+    return () => subscription.remove();
   }, []);
 
   return (
@@ -69,7 +86,7 @@ function MyStack() {
       <Stack.Screen name="Language" component={LanguageScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="MyDownload" component={DownloadScreen} />
-      <Stack.Screen name="ReferralPage" component={ReferralScreen} />
+      <Stack.Screen name="Referral" component={ReferralScreen} />
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="Search" component={SearchScreen} />
       <Stack.Screen name="StoryDetails" component={StoryDetailsScreen} />

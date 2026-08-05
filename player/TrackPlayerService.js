@@ -22,7 +22,7 @@ export async function setupPlayer() {
       ],
       android: {
         appKilledPlaybackBehavior:
-          AppKilledPlaybackBehavior.ContinuePlayback,
+          AppKilledPlaybackBehavior.StopPlaybackAndRemoveNotification,
       },
     });
 

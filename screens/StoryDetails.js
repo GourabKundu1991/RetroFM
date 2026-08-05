@@ -11,7 +11,6 @@ import LinearGradient from 'react-native-linear-gradient';
 import Events from '../auth_provider/Events';
 import moment from 'moment';
 
-//import PushControllerService from '../auth_provider/PushController';
 import CommonHeader from '../components/CommonHeader';
 import BottomTabs from '../components/BottomTabs';
 import apiClient from '../api/apiClient';
@@ -25,7 +24,6 @@ import TrackPlayer, {
     useProgress,
     useActiveTrack,
 } from 'react-native-track-player';
-//import { usePlayer } from '../player/PlayerContext';
 import Slider from '@react-native-community/slider';
 
 import { useFocusEffect } from '@react-navigation/native';
@@ -41,8 +39,6 @@ const StoryDetailsScreen = ({ navigation, route }) => {
 
     const [isImageLoading, setIsImageLoading] = React.useState(false);
 
-    //let isPlayerInitialized = false;
-
     const progress = useProgress();
 
     const [episodID, setEpisodID] = React.useState("");
@@ -52,121 +48,87 @@ const StoryDetailsScreen = ({ navigation, route }) => {
 
     const playbackState = usePlaybackState();
 
-    //const playbackState = TrackPlayer.getPlaybackState();
+    const { position } = useProgress(1);
 
-    //const sleepTimer = useRef(null);
+    const nextAdTime = useRef(60);
+    const adShowing = useRef(false);
 
-    /* const {
-        loadQueue,
-        playTrack,
-        previousTrack,
-        nextTrack,
-    } = usePlayer(); */
+    const showAd = () => {
+        adShowing.current = true;
+        TrackPlayer.stop();
 
-    /* 
-    const track = TrackPlayer.getActiveTrack(); */
+        setTimeout(() => {
+            adShowing.current = false;
 
-    /* const checkCurrentPlayer = async () => {
-        try {
-            const playbackState = await TrackPlayer.getPlaybackState();
-            const track = await TrackPlayer.getActiveTrack();
-
-            console.log("Playback:", playbackState.state);
-            console.log("Track:", track);
-
-            if (
-                track &&
-                (playbackState.state === State.Playing ||
-                    playbackState.state === State.Paused)
-            ) {
-                console.log("Background player already running");
-
-                return;
+            if (nextAdTime.current === 60) {
+                nextAdTime.current = 180;
+            } else if (nextAdTime.current === 180) {
+                nextAdTime.current = 360;
             } else {
-                console.log("No play running");
-
-                return;
+                nextAdTime.current += 180;
             }
+            
+            TrackPlayer.play();
+        }, 3000);
 
+        /* Alert.alert(
+            t("Ad"),
+            "Show Ad",
+            [
+                {
+                    text: "OK",
+                    onPress: () => {
+                        adShowing.current = false;
 
-        } catch (e) {
-            console.log(e);
+                        if (nextAdTime.current === 60) {
+                            nextAdTime.current = 180;
+                        } else if (nextAdTime.current === 180) {
+                            nextAdTime.current = 360;
+                        } else {
+                            nextAdTime.current += 180;
+                        }
+
+                        console.log("Next Ad:", nextAdTime.current);
+                    },
+                },
+            ],
+            { cancelable: false }
+        ); */
+    };
+
+    useEffect(() => {
+        if (playType !== "EPISODE") return;
+
+        if (!adShowing.current && position >= nextAdTime.current) {
+            showAd();
         }
-    }; */
+    }, [position, playType]);
 
-    /* useFocusEffect(
+    useFocusEffect(
         React.useCallback(() => {
-            checkCurrentPlayer();
+            return () => {
+                (async () => {
+                    try {
+                        const playbackState = await TrackPlayer.getPlaybackState();
+                        const activeTrack = await TrackPlayer.getActiveTrack();
+
+                        console.log("State:", playbackState.state);
+                        console.log("Track:", activeTrack);
+
+                        // Keep playerData only if an episode is actively playing
+                        if (
+                            playbackState.state !== State.Playing ||
+                            !activeTrack
+                        ) {
+                            await AsyncStorage.removeItem("playerData");
+                        }
+                    } catch (e) {
+                        console.log(e);
+                    }
+                })();
+            };
         }, [])
-    ); */
-
-    /*  */
-
-
-    /* const start = async (storyData) => {
-        try {
-
-            setPlayType("TRAILER");
-
-            await TrackPlayer.reset();
-
-            await TrackPlayer.add({
-                id: storyData.id.toString(),
-                url: storyData.trailer_audio,
-                title: storyData.name,
-                artist: storyData.author_name,
-                isLiveStream: false,
-            });
-
-            await TrackPlayer.play();
-        } catch (e) {
-            console.log('Track Player Error:', e);
-        }
-    }; */
-
-    /* const playEpisode = async (item) => {
-
-        setLoading(true);
-        TrackPlayer.reset();
-
-        setTimeout(async () => {
-            try {
-                //await TrackPlayer.reset();
-
-                await TrackPlayer.add({
-                    id: item.id.toString(),
-                    url: item.audio_url,
-                    title: item.name,
-                    artist: item.author_name,
-                    artwork: item.play_image,
-                });
-
-                // Wait until track is ready
-                let state = await TrackPlayer.getPlaybackState();
-
-                while (
-                    state.state !== State.Ready &&
-                    state.state !== State.Paused &&
-                    state.state !== State.Playing
-                ) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    state = await TrackPlayer.getPlaybackState();
-                }
-
-                await TrackPlayer.play();
-
-                setPlayType("EPISODE");
-                setEpisodID(item.id);
-                setStoryId(route.params.storyID);
-
-                setLoading(false);
-
-            } catch (e) {
-                console.log("Play Episode Error:", e);
-            }
-        }, 500);
-
-    }; */
+    );
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
@@ -186,7 +148,6 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                 }
             });
             getADetails();
-            console.log("ID:", route.params.storyID);
         });
         return unsubscribe;
     }, []);
@@ -212,22 +173,18 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                         if (responseJson.status == true) {
                             setStoryDetails(responseJson.details);
                             setEpisodList(responseJson.details.episodes);
-                            //start(responseJson.details);
-                            /* AsyncStorage.getItem('playerData').then(playval => {
+                            AsyncStorage.getItem('playerData').then(playval => {
                                 console.log("playerData:", playval);
                                 if (playval != null) {
-                                    console.log();
                                     setLoading(false);
-                                    setPlayType(JSON.parse(playval).playType);
-                                    setStoryId(JSON.parse(playval).storyId);
-                                    setEpisodID(JSON.parse(playval).episodId);
+                                    setPlayType("EPISODE");
+                                    setStoryId(JSON.parse(playval).detailID);
+                                    setEpisodID(JSON.parse(playval).itemDetail.id);
                                 } else {
-                                    setTimeout(() => {
-                                        setLoading(false);
-                                        start(responseJson.details);
-                                    }, 500);
+                                    setLoading(false);
+                                    start(responseJson.details);
                                 }
-                            }); */
+                            });
                             setLoading(false);
                         } else {
                             setLoading(false);
@@ -252,6 +209,8 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                 if (playType === "TRAILER") {
                     TrackPlayer.stop().catch(() => { });
                     TrackPlayer.reset().catch(() => { });
+                } else {
+                    console.log("console back: ", playbackState.state, State.Playing);
                 }
             };
         }, [playType])
@@ -275,23 +234,43 @@ const StoryDetailsScreen = ({ navigation, route }) => {
 
     const playEpisode = async (item) => {
         try {
-            await TrackPlayer.stop();
+            if (item.episode_status == false) {
+                TrackPlayer.stop().catch(() => { });
+                TrackPlayer.reset().catch(() => { });
+                setPlayType("");
+                setEpisodID("");
+                setStoryId("");
+                AsyncStorage.removeItem("playerData");
+                navigation.navigate('MySubscription');
+            } else {
 
-            setPlayType("EPISODE");
-            setEpisodID(item.id);
-            setStoryId(route.params.storyID);
+                await TrackPlayer.stop();
 
-            await TrackPlayer.reset();
+                setPlayType("EPISODE");
+                setEpisodID(item.id);
+                setStoryId(route.params.storyID);
 
-            await TrackPlayer.add({
-                id: item.id.toString(),
-                url: item.audio_url,
-                title: item.name,
-                artist: item.author_name,
-                isLiveStream: false,
-            });
+                AsyncStorage.setItem(
+                    'playerData',
+                    JSON.stringify({
+                        itemDetail: item,
+                        detailID: route.params.storyID,
+                    })
+                );
 
-            await TrackPlayer.play();
+                await TrackPlayer.reset();
+
+                await TrackPlayer.add({
+                    id: item.id.toString(),
+                    url: item.audio_url,
+                    title: item.name,
+                    artist: item.author_name,
+                    isLiveStream: false,
+                });
+
+                await TrackPlayer.play();
+
+            }
 
         } catch (e) {
             console.log("playEpisode Error:", e);
@@ -348,6 +327,53 @@ const StoryDetailsScreen = ({ navigation, route }) => {
         }
     };
 
+    const onDownload = (itemData) => {
+        Alert.alert(
+            t("Confirmation"),
+            t("Are you sure want to download this Story") + "?",
+            [
+                {
+                    text: t("Cancel"),
+                    onPress: () => console.log("Cancel Pressed"),
+                    style: "cancel"
+                },
+                {
+                    text: t("Yes"), onPress: () => {
+                        setLoading(true);
+                        AsyncStorage.getItem('downloadData').then(val => {
+                            console.log("downloadData:", val);
+                            if (val != null) {
+                                let existingData = JSON.parse(val);
+                                // Append new item
+                                existingData.push(itemData);
+
+                                AsyncStorage.setItem(
+                                    'playerData',
+                                    JSON.stringify(existingData)
+                                );
+                            } else {
+                                let existingData = [];
+                                // Append new item
+                                existingData.push(itemData);
+
+                                AsyncStorage.setItem(
+                                    'playerData',
+                                    JSON.stringify(existingData)
+                                );
+                            }
+                        });
+
+                        setTimeout(() => {
+                            setLoading(false);
+                            Toast.show({ description: "Download Successfully Done" });
+                        }, 1000);
+                    }
+                }
+            ],
+            { cancelable: false }
+        );
+    }
+
     return (
         <NativeBaseProvider>
             <VStack backgroundColor={"#000000"} flex={1}>
@@ -364,7 +390,7 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                     <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
                         <View style={{ position: 'relative' }}>
                             <Image style={{ width: '100%', height: 260, resizeMode: 'stretch' }} source={storyDetails.image1 ? { uri: storyDetails.image1 } : require('../assets/images/noimage.png')} />
-                            {playType === "TRAILER" && (
+                            {(playType === "TRAILER" || (playType === "EPISODE" && storyId != route.params.storyID)) && (
                                 <Box alignItems={'center'} justifyContent={'center'} borderRadius={30} backgroundColor={'#fc030b'} style={{ position: 'absolute', bottom: 15, right: 15, paddingHorizontal: 10, paddingVertical: 3 }}>
                                     <HStack alignItems={'center'}>
                                         <TouchableOpacity
@@ -510,37 +536,48 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                                 <VStack flexWrap={'wrap'} justifyContent={'center'}>
                                     {episodList.map((item, index) =>
                                         <Pressable onPress={() => playEpisode(item)} key={index} style={{ width: '100%', paddingVertical: 15, borderBottomWidth: episodList.length == index + 1 ? 0 : 1, borderColor: '#555555' }}>
-                                            <HStack space={3} alignItems={'center'}>
-                                                <VStack style={{ width: '25%' }}>
-                                                    <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 10, overflow: 'hidden', position: 'relative' }}>
-                                                        <FastImage
-                                                            style={{
-                                                                width: '100%',
-                                                                height: 80,
-                                                            }}
-                                                            source={{
-                                                                uri: item.image,
-                                                                priority: FastImage.priority.high,
-                                                            }}
-                                                            resizeMode={FastImage.resizeMode.cover}
-                                                            onLoadStart={() => setIsImageLoading(true)}
-                                                            onLoadEnd={() => setIsImageLoading(false)}
-                                                        />
-                                                        {isImageLoading && (
-                                                            <Box style={{ position: 'absolute', zIndex: 9, alignItems: 'center', justifyContent: 'center', left: 0, top: 0, width: '100%', height: '100%', backgroundColor: '#000000' }}>
-                                                                <ActivityIndicator animating={isImageLoading} size="small" color="#fc030b" />
-                                                            </Box>
-                                                        )}
-                                                        {episodID === item.id && (
-                                                            <Box style={{ position: 'absolute', zIndex: 9, alignItems: 'center', justifyContent: 'center', left: 0, top: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)' }}>
-                                                                <Image style={{ width: 60, height: 60, resizeMode: 'contain' }} source={require('../assets/images/audio.gif')} />
-                                                            </Box>
-                                                        )}
-                                                    </Box>
-                                                </VStack>
-                                                <VStack style={{ width: '60%' }} space={1.5}>
-                                                    <Text color={"#ffffff"} fontSize="sm">{item.name}</Text>
-                                                    <Text color={"#ffffff"} fontSize="sm">{item.playes} <Text color={"#888888"} fontSize="xs">Plays</Text> <Text color={"#fc030b"} fontSize="xl"> | </Text> {item.duration} <Text color={"#fc030b"} fontSize="xl"> | </Text> <Text color={"#888888"} fontSize="xs">{item.days_ago}</Text></Text>
+                                            <HStack alignItems={'center'} justifyContent={'space-between'}>
+                                                <HStack style={{ width: '90%' }} space={3} alignItems={'center'}>
+                                                    <VStack style={{ width: '25%' }}>
+                                                        <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 10, overflow: 'hidden', position: 'relative' }}>
+                                                            <FastImage
+                                                                style={{
+                                                                    width: '100%',
+                                                                    height: 80,
+                                                                }}
+                                                                source={{
+                                                                    uri: item.image,
+                                                                    priority: FastImage.priority.high,
+                                                                }}
+                                                                resizeMode={FastImage.resizeMode.cover}
+                                                                onLoadStart={() => setIsImageLoading(true)}
+                                                                onLoadEnd={() => setIsImageLoading(false)}
+                                                            />
+                                                            {isImageLoading && (
+                                                                <Box style={{ position: 'absolute', zIndex: 9, alignItems: 'center', justifyContent: 'center', left: 0, top: 0, width: '100%', height: '100%', backgroundColor: '#000000' }}>
+                                                                    <ActivityIndicator animating={isImageLoading} size="small" color="#fc030b" />
+                                                                </Box>
+                                                            )}
+                                                            {episodID === item.id && (
+                                                                <Box style={{ position: 'absolute', zIndex: 9, alignItems: 'center', justifyContent: 'center', left: 0, top: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)' }}>
+                                                                    <Image style={{ width: 60, height: 60, resizeMode: 'contain' }} source={require('../assets/images/audio.gif')} />
+                                                                </Box>
+                                                            )}
+                                                        </Box>
+                                                    </VStack>
+                                                    <VStack style={{ width: '65%' }} space={1.5}>
+                                                        <Text color={"#ffffff"} fontSize="sm">{item.name}</Text>
+                                                        <Text color={"#ffffff"} fontSize="sm">{item.playes} <Text color={"#888888"} fontSize="xs">Plays</Text> <Text color={"#fc030b"} fontSize="xl"> | </Text> {item.duration} <Text color={"#fc030b"} fontSize="xl"> | </Text> <Text color={"#888888"} fontSize="xs">{item.days_ago}</Text></Text>
+                                                    </VStack>
+                                                </HStack>
+                                                <VStack space={1.5} paddingHorizontal={3}>
+                                                    {!item.episode_status && (
+                                                        <Icon name={"lock-closed"} size={22} color="#fc030b" />
+                                                    )}
+
+                                                    {item.episode_status && (
+                                                        <Pressable onPress={() => onDownload(item)}><Icon name="download-outline" size={22} color="#fc030b" /></Pressable>
+                                                    )}
                                                 </VStack>
                                             </HStack>
                                         </Pressable>
@@ -553,6 +590,11 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                     </ScrollView>
                 </LinearGradient>
             </VStack>
+            {adShowing.current == true && (
+                <View style={styles.spincontainer}>
+                    <Image source={{ uri: "https://cdn.yespo.io/photos/shares/Blog/Winter_gif_ideas/kate-spade.gif" }} width={300} height={480} resizeMode='cover' style={{ borderRadius: 20, overflow: 'hidden' }} />
+                </View>
+            )}
             {loading && (
                 <View style={styles.spincontainer}>
                     <ActivityIndicator animating={loading} size="large" color="#fc030b" />

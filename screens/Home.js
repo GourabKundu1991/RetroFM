@@ -132,7 +132,7 @@ const HomeScreen = ({ navigation }) => {
                 formdata.append("category", cateId);
                 formdata.append("sub_category_id", "");
                 formdata.append("home", cateId == "" ? 1 : 2);
-                console.log(formdata);
+                console.log(formdata, JSON.parse(val).access_token);
                 apiClient
                     .post(`${BASE_URL}/get-home-data`, formdata, {
                         headers: {

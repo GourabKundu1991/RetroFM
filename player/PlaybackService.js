@@ -31,7 +31,6 @@ module.exports = async function () {
 
     if (state === State.Stopped || state === State.Ended) {
       await AsyncStorage.removeItem("CURRENT_PLAYER");
-      await AsyncStorage.removeItem("playerData");
     }
   });
 

@@ -40,7 +40,7 @@ const CommonHeader = ({ showBack, onPressBack, showMenu, search }) => {
                             </Pressable>
                         )}
                         <Box style={{ borderRadius: 15, width: 40, height: 40, backgroundColor: '#222222', justifyContent: 'center', alignItems: 'center' }}>
-                            <Image source={require('../assets/images/logo.png')} style={{ width: 40, height: 40 }} />
+                        <Pressable onPress={() => navigation.navigate('About')}><Image source={require('../assets/images/logo.png')} style={{ width: 40, height: 40 }} /></Pressable>
                         </Box>
                     </HStack>
                 </HStack>
