@@ -105,7 +105,7 @@ const MyLibraryScreen = ({ navigation, route }) => {
                             )}
                             <VStack flexWrap={'wrap'} justifyContent={'center'}>
                                 {allList.map((item, index) =>
-                                    <Pressable key={index} onPress={() => navigation.navigate("StoryDetails", { "storyID": item.id })} style={{ width: '100%', paddingVertical: 15, borderBottomWidth: storyList.length == index + 1 ? 0 : 1, borderColor: '#555555' }}>
+                                    <Pressable key={index} onPress={() => navigation.navigate("StoryDetails", { "storyID": item.id })} style={{ width: '100%', paddingVertical: 15, borderBottomWidth: allList.length == index + 1 ? 0 : 1, borderColor: '#555555' }}>
                                         <HStack space={4}>
                                             <VStack style={{ width: '40%' }}>
                                                 <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 20, overflow: 'hidden', position: 'relative' }}>

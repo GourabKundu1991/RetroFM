@@ -59,7 +59,7 @@ const LeftMenuBarScreen = () => {
                                 console.log("Logout:", responseJson);
                                 navigation.dispatch(DrawerActions.closeDrawer());
                                 if (responseJson.status == true) {
-                                    AsyncStorage.clear();
+                                    clearStorageExceptDownloadData();
                                     navigation.navigate('Login');
                                 }
                             })
@@ -73,6 +73,22 @@ const LeftMenuBarScreen = () => {
             { cancelable: false }
         );
     }
+
+    const clearStorageExceptDownloadData = async () => {
+        try {
+          const downloadData = await AsyncStorage.getItem('downloadData');
+      
+          await AsyncStorage.clear();
+      
+          if (downloadData !== null) {
+            await AsyncStorage.setItem('downloadData', downloadData);
+          }
+      
+          console.log('AsyncStorage cleared except downloadData');
+        } catch (error) {
+          console.error('Error clearing AsyncStorage:', error);
+        }
+      };
 
     return (
         <NativeBaseProvider>

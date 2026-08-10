@@ -53,56 +53,55 @@ const StoryDetailsScreen = ({ navigation, route }) => {
     const nextAdTime = useRef(60);
     const adShowing = useRef(false);
 
-    const showAd = () => {
+    const showAd = async () => {
+        if (storyDetails?.subscribed == false || adShowing.current) {
+            return;
+        }
+    
         adShowing.current = true;
-        TrackPlayer.stop();
-
-        setTimeout(() => {
+    
+        try {
+            // Pause instead of stop so playback position is preserved
+            await TrackPlayer.pause();
+    
+            // Show your actual interstitial ad here
+            // await showInterstitialAd();
+    
+            setTimeout(async () => {
+                // Next ad timing
+                if (nextAdTime.current === 60) {
+                    nextAdTime.current = 180;
+                } else if (nextAdTime.current === 180) {
+                    nextAdTime.current = 360;
+                } else {
+                    nextAdTime.current += 180;
+                }
+    
+                adShowing.current = false;
+    
+                // Resume episode
+                try {
+                    await TrackPlayer.play();
+                } catch (error) {
+                    console.log("Resume playback error:", error);
+                }
+            }, 3000);
+    
+        } catch (error) {
+            console.log("Ad pause error:", error);
             adShowing.current = false;
-
-            if (nextAdTime.current === 60) {
-                nextAdTime.current = 180;
-            } else if (nextAdTime.current === 180) {
-                nextAdTime.current = 360;
-            } else {
-                nextAdTime.current += 180;
-            }
-            
-            TrackPlayer.play();
-        }, 3000);
-
-        /* Alert.alert(
-            t("Ad"),
-            "Show Ad",
-            [
-                {
-                    text: "OK",
-                    onPress: () => {
-                        adShowing.current = false;
-
-                        if (nextAdTime.current === 60) {
-                            nextAdTime.current = 180;
-                        } else if (nextAdTime.current === 180) {
-                            nextAdTime.current = 360;
-                        } else {
-                            nextAdTime.current += 180;
-                        }
-
-                        console.log("Next Ad:", nextAdTime.current);
-                    },
-                },
-            ],
-            { cancelable: false }
-        ); */
+        }
     };
-
+    
     useEffect(() => {
         if (playType !== "EPISODE") return;
-
-        if (!adShowing.current && position >= nextAdTime.current) {
+        if (storyDetails?.subscribed == false) return;
+        if (adShowing.current) return;
+    
+        if (position >= nextAdTime.current) {
             showAd();
         }
-    }, [position, playType]);
+    }, [position, playType, storyDetails?.subscribed]);
 
     useFocusEffect(
         React.useCallback(() => {
@@ -147,12 +146,12 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                         .catch(err => console.log());
                 }
             });
-            getADetails();
+            getAllDetails();
         });
         return unsubscribe;
     }, []);
 
-    const getADetails = () => {
+    const getAllDetails = () => {
         AsyncStorage.getItem('userToken').then(val => {
             if (val != null) {
                 let formdata = new FormData();
@@ -234,46 +233,60 @@ const StoryDetailsScreen = ({ navigation, route }) => {
 
     const playEpisode = async (item) => {
         try {
-            if (item.episode_status == false) {
-                TrackPlayer.stop().catch(() => { });
-                TrackPlayer.reset().catch(() => { });
+            if (!item?.audio_url) {
+                console.log("Episode audio URL missing:", item);
+                return;
+            }
+
+            if (item.episode_status === false) {
+                await TrackPlayer.stop().catch(() => { });
+                await TrackPlayer.reset().catch(() => { });
+
                 setPlayType("");
                 setEpisodID("");
                 setStoryId("");
-                AsyncStorage.removeItem("playerData");
-                navigation.navigate('MySubscription');
-            } else {
 
-                await TrackPlayer.stop();
+                await AsyncStorage.removeItem("playerData");
 
-                setPlayType("EPISODE");
-                setEpisodID(item.id);
-                setStoryId(route.params.storyID);
-
-                AsyncStorage.setItem(
-                    'playerData',
-                    JSON.stringify({
-                        itemDetail: item,
-                        detailID: route.params.storyID,
-                    })
-                );
-
-                await TrackPlayer.reset();
-
-                await TrackPlayer.add({
-                    id: item.id.toString(),
-                    url: item.audio_url,
-                    title: item.name,
-                    artist: item.author_name,
-                    isLiveStream: false,
-                });
-
-                await TrackPlayer.play();
-
+                navigation.navigate("MySubscription");
+                return;
             }
 
-        } catch (e) {
-            console.log("playEpisode Error:", e);
+            console.log("Playing episode:", item);
+
+            // Update UI state immediately
+            setPlayType("EPISODE");
+            setEpisodID(item.id);
+            setStoryId(route.params.storyID);
+
+            // Save current episode
+            await AsyncStorage.setItem(
+                "playerData",
+                JSON.stringify({
+                    itemDetail: item,
+                    detailID: route.params.storyID,
+                })
+            );
+
+            // Don't call stop() before reset()
+            await TrackPlayer.reset();
+
+            await TrackPlayer.add({
+                id: String(item.id),
+                url: item.audio_url,
+                title: item.name || "Episode",
+                artist: item.author_name || storyDetails?.name || "",
+                artwork: item.play_image,
+                isLiveStream: false,
+            });
+
+            // Start immediately
+            await TrackPlayer.play();
+
+            console.log("Episode started:", item.id);
+
+        } catch (error) {
+            console.log("playEpisode Error:", error);
         }
     };
 
@@ -335,44 +348,98 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                 {
                     text: t("Cancel"),
                     onPress: () => console.log("Cancel Pressed"),
-                    style: "cancel"
+                    style: "cancel",
                 },
                 {
-                    text: t("Yes"), onPress: () => {
-                        setLoading(true);
-                        AsyncStorage.getItem('downloadData').then(val => {
+                    text: t("Yes"),
+                    onPress: async () => {
+                        try {
+                            setLoading(true);
+
+                            const val = await AsyncStorage.getItem("downloadData");
+
                             console.log("downloadData:", val);
-                            if (val != null) {
-                                let existingData = JSON.parse(val);
-                                // Append new item
-                                existingData.push(itemData);
 
-                                AsyncStorage.setItem(
-                                    'playerData',
-                                    JSON.stringify(existingData)
-                                );
-                            } else {
-                                let existingData = [];
-                                // Append new item
-                                existingData.push(itemData);
+                            let existingData = val ? JSON.parse(val) : [];
 
-                                AsyncStorage.setItem(
-                                    'playerData',
-                                    JSON.stringify(existingData)
-                                );
+                            // Check if item already exists
+                            const alreadyExists = existingData.some(
+                                item => item.id === itemData.id
+                            );
+
+                            if (alreadyExists) {
+                                Toast.show({
+                                    description: "Story already downloaded",
+                                });
+                                return;
                             }
-                        });
 
-                        setTimeout(() => {
+                            // Add new item
+                            existingData.push(itemData);
+
+                            // Save data
+                            await AsyncStorage.setItem(
+                                "downloadData",
+                                JSON.stringify(existingData)
+                            );
+
+                            Toast.show({
+                                description: "Download Successfully Done",
+                            });
+
+                        } catch (error) {
+                            console.log("Download error:", error);
+
+                            Toast.show({
+                                description: "Something went wrong",
+                            });
+                        } finally {
                             setLoading(false);
-                            Toast.show({ description: "Download Successfully Done" });
-                        }, 1000);
-                    }
-                }
+                        }
+                    },
+                },
             ],
             { cancelable: false }
         );
+    };
+
+    const onLikeDislike = () => {
+        AsyncStorage.getItem('userToken').then(val => {
+            if (val != null) {
+                let formdata = new FormData();
+                formdata.append("seriesId", route.params.storyID);
+                apiClient
+                    .post(`${BASE_URL}/like-dislike-series`, formdata, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            authtoken: `${AuthToken}`,
+                            accesstoken: JSON.parse(val).access_token
+                        },
+                    }).then(response => {
+                        return response.data;
+                    })
+                    .then((responseJson) => {
+                        console.log("Story like_dislike:", responseJson);
+                        if (responseJson.status == true) {
+                            getAllDetails();
+                            setLoading(false);
+                        } else {
+                            setLoading(false);
+                            Toast.show({ description: responseJson.message });
+                            if (responseJson.access_token_expired == true) {
+                                AsyncStorage.clear();
+                                navigation.navigate('Login');
+                            }
+                        }
+                    })
+                    .catch((error) => {
+                        setLoading(false);
+                        console.log("Story Details Error:", error);
+                    });
+            }
+        })
     }
+
 
     return (
         <NativeBaseProvider>
@@ -390,7 +457,7 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                     <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
                         <View style={{ position: 'relative' }}>
                             <Image style={{ width: '100%', height: 260, resizeMode: 'stretch' }} source={storyDetails.image1 ? { uri: storyDetails.image1 } : require('../assets/images/noimage.png')} />
-                            {(playType === "TRAILER" || (playType === "EPISODE" && storyId != route.params.storyID)) && (
+                            {playType === "TRAILER" && (
                                 <Box alignItems={'center'} justifyContent={'center'} borderRadius={30} backgroundColor={'#fc030b'} style={{ position: 'absolute', bottom: 15, right: 15, paddingHorizontal: 10, paddingVertical: 3 }}>
                                     <HStack alignItems={'center'}>
                                         <TouchableOpacity
@@ -517,13 +584,15 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                                         <Text color={"#ffffff"} fontSize="lg" fontWeight={'bold'}>{storyDetails.content_type}</Text>
                                         <Text color={"#888888"} fontSize="xs">Rated</Text>
                                     </Stack>
-                                    <HStack space={1} style={{ paddingHorizontal: 15 }}>
-                                        <Icon name="heart" size={24} color="#fc030b" />
-                                        <Text color={"#ffffff"} fontSize="lg" fontWeight={'bold'}>Like</Text>
-                                    </HStack>
+                                    <Pressable onPress={() => onLikeDislike()}>
+                                        <HStack space={1} style={{ paddingHorizontal: 15 }}>
+                                            <Icon name={storyDetails.favourite == true ? "heart" : "heart-outline"} size={24} color="#fc030b" />
+                                            <Text color={"#ffffff"} fontSize="lg" fontWeight={'bold'}>Like</Text>
+                                        </HStack>
+                                    </Pressable>
                                 </HStack>
                                 <Text color={"#ffffff"} fontSize="sm">{storyDetails.description}</Text>
-                                <HStack space={3} backgroundColor={"#111111"} padding={3}>
+                                <HStack space={3} alignItems={'center'} backgroundColor={"#111111"} padding={3}>
                                     <Avatar size={39} source={{ uri: storyDetails.author_image }} />
                                     <VStack>
                                         <Text color={"#ffffff"} fontSize="sm">{storyDetails.author_name}</Text>
@@ -575,7 +644,7 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                                                         <Icon name={"lock-closed"} size={22} color="#fc030b" />
                                                     )}
 
-                                                    {item.episode_status && (
+                                                    {storyDetails.subscribed && (
                                                         <Pressable onPress={() => onDownload(item)}><Icon name="download-outline" size={22} color="#fc030b" /></Pressable>
                                                     )}
                                                 </VStack>

@@ -423,7 +423,7 @@ const HomeScreen = ({ navigation }) => {
                     <BottomTabs selected={0} />
                 </LinearGradient>
             </VStack>
-            {!subcriptionPOP && (
+            {subcriptionPOP == false && (
                 <View style={styles.spincontainer}>
                     <Button backgroundColor={"#eeeeee"} style={{ borderRadius: 30, overflow: 'hidden', height: 40, width: 40, position: 'absolute', right: 30, top: 15 }} size="xs" marginTop={5} onPress={() => setSubcriptionPOP(true)}>
                         <Text color="#000000" fontSize="2xl" lineHeight={10}>X</Text>
