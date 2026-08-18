@@ -90,6 +90,8 @@ const AboutDetailsScreen = ({ navigation, route }) => {
                             </VStack>
                         </VStack>
                     </ScrollView>
+
+                    <BottomTabs selected={"-"} />
                 </LinearGradient>
             </VStack>
             {loading && (

@@ -95,7 +95,7 @@ const StoryDetailsScreen = ({ navigation, route }) => {
     
     useEffect(() => {
         if (playType !== "EPISODE") return;
-        if (storyDetails?.subscribed == false) return;
+        if (storyDetails?.subscribed === true) return;
         if (adShowing.current) return;
     
         if (position >= nextAdTime.current) {
@@ -233,6 +233,70 @@ const StoryDetailsScreen = ({ navigation, route }) => {
 
     const playEpisode = async (item) => {
         try {
+            if (!item?.audio_url) return;
+    
+            if (item.episode_status === false) {
+                navigation.navigate("MySubscription");
+                return;
+            }
+    
+            setPlayType("EPISODE");
+            setEpisodID(item.id);
+            setStoryId(route.params.storyID);
+    
+            await AsyncStorage.setItem(
+                "playerData",
+                JSON.stringify({
+                    itemDetail: item,
+                    detailID: route.params.storyID,
+                })
+            );
+    
+            await TrackPlayer.reset();
+    
+            const startIndex = episodList.findIndex(
+                episode => String(episode.id) === String(item.id)
+            );
+    
+            const queue = episodList
+                .slice(startIndex)
+                .filter(episode => episode.episode_status !== false)
+                .map(episode => ({
+                    id: String(episode.id),
+                    url: episode.audio_url,
+                    title: episode.name || "Episode",
+                    artist:
+                        episode.author_name ||
+                        storyDetails?.name ||
+                        "",
+                    artwork: episode.play_image,
+                    isLiveStream: false,
+                }));
+    
+            await TrackPlayer.add(queue);
+    
+            await TrackPlayer.play();
+    
+        } catch (error) {
+            console.log("playEpisode Error:", error);
+        }
+    };
+
+    useEffect(() => {
+        if (storyDetails?.subscribed !== true) return;
+    
+        const subscription = TrackPlayer.addEventListener(
+            "playback-queue-ended",
+            async () => {
+                console.log("All episodes finished");
+            }
+        );
+    
+        return () => subscription.remove();
+    }, [storyDetails?.subscribed]);
+
+    /* const playEpisode = async (item) => {
+        try {
             if (!item?.audio_url) {
                 console.log("Episode audio URL missing:", item);
                 return;
@@ -288,7 +352,7 @@ const StoryDetailsScreen = ({ navigation, route }) => {
         } catch (error) {
             console.log("playEpisode Error:", error);
         }
-    };
+    }; */
 
     const seek = async (value) => {
 
@@ -657,6 +721,8 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                         </Stack>
 
                     </ScrollView>
+
+                    <BottomTabs selected={"-"} />
                 </LinearGradient>
             </VStack>
             {adShowing.current == true && (

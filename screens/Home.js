@@ -54,7 +54,7 @@ const HomeScreen = ({ navigation }) => {
     const renderBanner = ({ item, index }) => {
         return (
             <View key={index}>
-                <TouchableOpacity onPress={() => navigation.navigate("StoryDetails", {"storyID": item.id})} style={{ position: 'relative' }}>
+                <TouchableOpacity onPress={() => navigation.navigate("StoryDetails", {"storyID": item.series_id})} style={{ position: 'relative' }}>
                     <Image style={{ width: '100%', height: 250, resizeMode: 'stretch' }} source={item.banner_image ? { uri: item.banner_image } : require('../assets/images/noimage.png')} />
                     <Box style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', top: 0, left: 0 }}>
                         <Icon name="play-circle" size={70} color="#ffffff" />

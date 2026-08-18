@@ -175,6 +175,8 @@ const AuthorDetailsScreen = ({ navigation, route }) => {
                         </Stack>
 
                     </ScrollView>
+
+                    <BottomTabs selected={"-"} />
                 </LinearGradient>
             </VStack>
             {loading && (

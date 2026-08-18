@@ -101,6 +101,8 @@ const ReferralScreen = ({ navigation }) => {
                             </HStack>
                         </VStack>
                     </ScrollView>
+
+                    <BottomTabs selected={"-"} />
                 </LinearGradient>
             </VStack>
             {loading && (

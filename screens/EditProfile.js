@@ -102,6 +102,8 @@ const EditProfileScreen = ({ navigation }) => {
                             </HStack>
                         </VStack>
                     </ScrollView>
+
+                    <BottomTabs selected={"-"} />
                 </LinearGradient>
             </VStack>
             {loading && (

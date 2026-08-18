@@ -154,6 +154,8 @@ const StoryListScreen = ({ navigation, route }) => {
                         </Stack>
 
                     </ScrollView>
+
+                    <BottomTabs selected={"-"} />
                 </LinearGradient>
             </VStack>
             {loading && (

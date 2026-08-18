@@ -136,6 +136,8 @@ const AuthorListScreen = ({ navigation }) => {
                         </Stack>
 
                     </ScrollView>
+
+                    <BottomTabs selected={"-"} />
                 </LinearGradient>
             </VStack>
             {loading && (

@@ -120,6 +120,8 @@ const DownloadScreen = ({ navigation }) => {
                             </VStack>
                         </VStack>
                     </ScrollView>
+
+                    <BottomTabs selected={"-"} />
                 </LinearGradient>
             </VStack>
             {loading && (

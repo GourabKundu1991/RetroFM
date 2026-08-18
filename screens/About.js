@@ -108,6 +108,8 @@ const AboutScreen = ({ navigation }) => {
                             )}
                         </HStack>
                     </ScrollView>
+
+                    <BottomTabs selected={"-"} />
                 </LinearGradient>
             </VStack>
             {loading && (
