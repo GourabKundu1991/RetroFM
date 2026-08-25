@@ -35,6 +35,7 @@ import SearchScreen from './screens/Search';
 import StoryDetailsScreen from './screens/StoryDetails';
 import AboutDetailsScreen from './screens/AboutDetails';
 import PlayDownloadScreen from './screens/PlayDownload';
+import CommentsScreen from './screens/Comments';
 
 import { useEffect } from 'react';
 import { setupPlayer } from './player/TrackPlayerService';
@@ -93,6 +94,7 @@ function MyStack() {
       <Stack.Screen name="StoryDetails" component={StoryDetailsScreen} />
       <Stack.Screen name="AboutDetails" component={AboutDetailsScreen} />
       <Stack.Screen name="PlayDownload" component={PlayDownloadScreen} />
+      <Stack.Screen name="Comments" component={CommentsScreen} />
     </Stack.Navigator>
   );
 }

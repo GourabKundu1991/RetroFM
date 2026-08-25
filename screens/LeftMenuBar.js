@@ -26,7 +26,7 @@ const LeftMenuBarScreen = () => {
             setMainMenu(data);
         });
         Events.subscribe('profileData', (data) => {
-            console.log('profileData: ', data.name);
+            console.log('profileData: ', data);
             setProfileData(data);
         });
     }, []);

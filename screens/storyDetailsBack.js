@@ -1,6 +1,6 @@
 import { Avatar, Box, Button, Center, Checkbox, HStack, Input, NativeBaseProvider, ScrollView, Stack, Text, Toast, VStack } from 'native-base';
 import React, { useEffect, useRef } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Image, ImageBackground, Keyboard, Linking, Platform, Pressable, Share, StatusBar, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, Image, ImageBackground, Keyboard, Linking, Platform, Pressable, StatusBar, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { AccessToken, API_KEY, AuthToken, BASE_URL } from '../auth_provider/Config';
 import Carousel from "react-native-reanimated-carousel";
@@ -27,7 +27,6 @@ import TrackPlayer, {
 import Slider from '@react-native-community/slider';
 
 import { useFocusEffect } from '@react-navigation/native';
-import { getNativeElementReferenceFromReactNativeDocumentElementInstanceHandle } from 'react-native/types_generated/src/private/webapis/dom/nodes/internals/ReactNativeDocumentElementInstanceHandle';
 
 const StoryDetailsScreen = ({ navigation, route }) => {
 
@@ -59,14 +58,14 @@ const StoryDetailsScreen = ({ navigation, route }) => {
         if (storyDetails?.subscribed === true || adShowing.current) {
             return;
         }
-
+    
         adShowing.current = true;
-
+    
         try {
             await TrackPlayer.pause();
-
+    
             // Show interstitial ad here
-
+    
             setTimeout(async () => {
                 if (nextAdTime.current === 60) {
                     nextAdTime.current = 180;
@@ -75,31 +74,31 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                 } else {
                     nextAdTime.current += 180;
                 }
-
+    
                 adShowing.current = false;
-
+    
                 await TrackPlayer.play();
-
+    
             }, 3000);
-
+    
         } catch (error) {
             console.log("Ad error:", error);
             adShowing.current = false;
-
+    
             try {
                 await TrackPlayer.play();
-            } catch (e) { }
+            } catch (e) {}
         }
     };
-
+    
     useEffect(() => {
         if (playType !== "EPISODE") return;
-
+    
         // Subscribed user → no ad
         if (storyDetails?.subscribed === true) return;
-
+    
         if (adShowing.current) return;
-
+    
         if (position >= nextAdTime.current) {
             showAd();
         }
@@ -184,26 +183,26 @@ const StoryDetailsScreen = ({ navigation, route }) => {
             async (event) => {
                 try {
                     if (playType !== "EPISODE") return;
-
+    
                     const track = event.track;
-
+    
                     if (!track) return;
-
+    
                     console.log("Active episode changed:", track);
-
+    
                     const currentEpisode = episodList.find(
                         episode => String(episode.id) === String(track.id)
                     );
-
+    
                     if (!currentEpisode) return;
-
+    
                     // Update current episode ID
                     setEpisodID(currentEpisode.id);
-
+    
                     // Reset ad timing for new episode
                     nextAdTime.current = 60;
                     adShowing.current = false;
-
+    
                     // Update playerData
                     await AsyncStorage.setItem(
                         "playerData",
@@ -212,12 +211,12 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                             detailID: route.params.storyID,
                         })
                     );
-
+    
                     console.log(
                         "Current Episode ID:",
                         currentEpisode.id
                     );
-
+    
                 } catch (error) {
                     console.log(
                         "playback-active-track-changed Error:",
@@ -226,7 +225,7 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                 }
             }
         );
-
+    
         return () => {
             subscription.remove();
         };
@@ -290,20 +289,20 @@ const StoryDetailsScreen = ({ navigation, route }) => {
     const playEpisode = async (item) => {
         try {
             if (!item?.audio_url) return;
-
+    
             if (item.episode_status === false) {
                 navigation.navigate("MySubscription");
                 return;
             }
-
+    
             setPlayType("EPISODE");
             setEpisodID(item.id);
             setStoryId(route.params.storyID);
-
+    
             // Reset ad state when manually starting an episode
             nextAdTime.current = 60;
             adShowing.current = false;
-
+    
             await AsyncStorage.setItem(
                 "playerData",
                 JSON.stringify({
@@ -311,18 +310,18 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                     detailID: route.params.storyID,
                 })
             );
-
+    
             await TrackPlayer.reset();
-
+    
             const startIndex = episodList.findIndex(
                 episode => String(episode.id) === String(item.id)
             );
-
+    
             if (startIndex === -1) {
                 console.log("Episode not found");
                 return;
             }
-
+    
             const queue = episodList
                 .slice(startIndex)
                 .filter(
@@ -341,15 +340,15 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                     artwork: episode.play_image,
                     isLiveStream: false,
                 }));
-
+    
             console.log("Episode Queue:", queue);
-
+    
             if (queue.length === 0) return;
-
+    
             await TrackPlayer.add(queue);
-
+    
             await TrackPlayer.play();
-
+    
         } catch (error) {
             console.log("playEpisode Error:", error);
         }
@@ -577,31 +576,6 @@ const StoryDetailsScreen = ({ navigation, route }) => {
         })
     }
 
-    const onShare = async () => {
-        try {
-            const result = await Share.share({
-                title: storyDetails.name,
-                message: storyDetails.description
-            });
-
-            if (result.action === Share.sharedAction) {
-                if (result.activityType) {
-                    // shared with activity type of result.activityType
-                } else {
-                    // shared
-                }
-            } else if (result.action === Share.dismissedAction) {
-                // dismissed
-            }
-        } catch (error) {
-            alert(error.message);
-        }
-    };
-
-    const goComments = () => {
-        navigation.navigate("Comments", { "seriesId": route.params.storyID, "episodeId": episodID });
-    }
-
 
     return (
         <NativeBaseProvider>
@@ -730,53 +704,37 @@ const StoryDetailsScreen = ({ navigation, route }) => {
                         <Stack padding={5} space={5}>
                             <VStack space={4}>
                                 <Text color={"#ffffff"} fontSize="lg">{storyDetails.name}</Text>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ borderColor: "#444444", borderBottomWidth: 1, borderTopWidth: 1, width: '100%' }}>
-                                    <HStack justifyContent={'center'} alignItems={'center'} style={{ paddingVertical: 10, marginBottom: 6 }}>
-                                        <Stack style={{ paddingHorizontal: 15 }}>
-                                            <HStack space={2} justifyContent={'center'} alignItems={'center'} style={{ paddingVertical: 1, paddingHorizontal: 5, width: 60, backgroundColor: 'green', overflow: 'hidden', borderRadius: 10 }}>
-                                                <Text color={"#ffffff"} fontSize="sm" fontWeight={'bold'}>{storyDetails.average_rating}</Text>
-                                                <Icon name="star" size={16} color="yellow" />
-                                            </HStack>
-                                            <Text color={"#888888"} fontSize="xs">{storyDetails.total_review} Reviews</Text>
-                                        </Stack>
-                                        <Stack style={{ borderColor: '#444444', borderLeftWidth: 1, borderRightWidth: 1, paddingHorizontal: 15 }}>
-                                            <Text color={"#ffffff"} fontSize="lg" fontWeight={'bold'}>{storyDetails.playes}</Text>
-                                            <Text color={"#888888"} fontSize="xs">Plays</Text>
-                                        </Stack>
-                                        <Pressable onPress={() => onLikeDislike()}>
-                                            <HStack space={1} alignItems={'center'} style={{ paddingHorizontal: 15 }}>
-                                                <Icon name={storyDetails.favourite == true ? "heart" : "heart-outline"} size={24} color="#fc030b" />
-                                                <Text color={"#ffffff"} fontSize="md" fontWeight={'bold'}>Like</Text>
-                                            </HStack>
-                                        </Pressable>
-                                        <Pressable onPress={() => onShare()}>
-                                            <HStack space={1} alignItems={'center'} style={{ borderColor: '#444444', borderLeftWidth: 1, borderRightWidth: 1, minHeight: 45, paddingHorizontal: 15 }}>
-                                                <Icon name="share-outline" size={24} color="#999999" />
-                                                <Text color={"#ffffff"} fontSize="md" fontWeight={'bold'}>Share</Text>
-                                            </HStack>
-                                        </Pressable>
-                                        <Pressable onPress={() => goComments()}>
-                                            <HStack space={1} alignItems={'center'} style={{ paddingHorizontal: 15 }}>
-                                                <Icon name="chatbubbles-outline" size={24} color="#999999" />
-                                                <Text color={"#ffffff"} fontSize="md" fontWeight={'bold'}>Comments</Text>
-                                            </HStack>
-                                        </Pressable>
-                                        <Stack style={{ borderColor: '#444444', borderLeftWidth: 1, paddingHorizontal: 15 }}>
-                                            <Text color={"#ffffff"} fontSize="md" fontWeight={'bold'}>{storyDetails.content_type}</Text>
-                                            <Text color={"#888888"} fontSize="xs">Rated</Text>
-                                        </Stack>
-                                    </HStack>
-                                </ScrollView>
+                                <HStack justifyContent={'center'} alignItems={'center'} style={{ borderColor: "#444444", borderBottomWidth: 1, borderTopWidth: 1, width: '100%', paddingVertical: 10, marginBottom: 6 }}>
+                                    <Stack style={{ paddingHorizontal: 15 }}>
+                                        <HStack space={2} justifyContent={'center'} alignItems={'center'} style={{ paddingVertical: 1, paddingHorizontal: 5, width: 60, backgroundColor: 'green', overflow: 'hidden', borderRadius: 10 }}>
+                                            <Text color={"#ffffff"} fontSize="sm" fontWeight={'bold'}>{storyDetails.average_rating}</Text>
+                                            <Icon name="star" size={16} color="yellow" />
+                                        </HStack>
+                                        <Text color={"#888888"} fontSize="xs">{storyDetails.total_review} Reviews</Text>
+                                    </Stack>
+                                    <Stack style={{ borderColor: '#444444', borderLeftWidth: 1, borderRightWidth: 1, paddingHorizontal: 15 }}>
+                                        <Text color={"#ffffff"} fontSize="lg" fontWeight={'bold'}>{storyDetails.playes}</Text>
+                                        <Text color={"#888888"} fontSize="xs">Plays</Text>
+                                    </Stack>
+                                    <Stack style={{ borderColor: '#444444', borderRightWidth: 1, paddingHorizontal: 15 }}>
+                                        <Text color={"#ffffff"} fontSize="lg" fontWeight={'bold'}>{storyDetails.content_type}</Text>
+                                        <Text color={"#888888"} fontSize="xs">Rated</Text>
+                                    </Stack>
+                                    <Pressable onPress={() => onLikeDislike()}>
+                                        <HStack space={1} style={{ paddingHorizontal: 15 }}>
+                                            <Icon name={storyDetails.favourite == true ? "heart" : "heart-outline"} size={24} color="#fc030b" />
+                                            <Text color={"#ffffff"} fontSize="lg" fontWeight={'bold'}>Like</Text>
+                                        </HStack>
+                                    </Pressable>
+                                </HStack>
                                 <Text color={"#ffffff"} fontSize="sm">{storyDetails.description}</Text>
-                                <TouchableOpacity onPress={() => navigation.navigate("AuthorDetails", { "authorId": storyDetails.author_id })}>
-                                    <HStack space={3} alignItems={'center'} backgroundColor={"#111111"} padding={3}>
-                                        <Avatar size={39} source={{ uri: storyDetails.author_image }} />
-                                        <VStack>
-                                            <Text color={"#ffffff"} fontSize="sm">{storyDetails.author_name}</Text>
-                                            <Text color={"#888888"} fontSize="xs">{storyDetails.author_followers} Followers</Text>
-                                        </VStack>
-                                    </HStack>
-                                </TouchableOpacity>
+                                <HStack space={3} alignItems={'center'} backgroundColor={"#111111"} padding={3}>
+                                    <Avatar size={39} source={{ uri: storyDetails.author_image }} />
+                                    <VStack>
+                                        <Text color={"#ffffff"} fontSize="sm">{storyDetails.author_name}</Text>
+                                        <Text color={"#888888"} fontSize="xs">{storyDetails.author_followers} Followers</Text>
+                                    </VStack>
+                                </HStack>
                                 <Box alignItems={'center'} justifyContent={'center'} width={170} height={38} borderRadius={10} backgroundColor={'#fc030b'}>
                                     <Text color="#ffffff" fontSize="md" fontWeight="bold" lineHeight={14}>{t("Episodes")} ({storyDetails.total_episode})</Text>
                                 </Box>

@@ -104,9 +104,9 @@ const AuthorListScreen = ({ navigation }) => {
                                 </HStack>
                                 <HStack flexWrap={'wrap'} justifyContent={'center'}>
                                     {allAuthor.map((item, index) =>
-                                        <TouchableOpacity key={index} style={{ width: 150, margin: 10 }} onPress={() => navigation.navigate("AuthorDetails", {"authorId": item.id})}>
+                                        <TouchableOpacity key={index} style={{ width: '40%', margin: '3%' }} onPress={() => navigation.navigate("AuthorDetails", {"authorId": item.id})}>
                                             <VStack space={2}>
-                                                <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 50, overflow: 'hidden', position: 'relative' }}>
+                                                <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 30, overflow: 'hidden', position: 'relative' }}>
                                                     <FastImage
                                                         style={{
                                                             width: '100%',

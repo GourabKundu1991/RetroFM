@@ -88,6 +88,7 @@ const HomeScreen = ({ navigation }) => {
 
     const getAllCate = () => {
         AsyncStorage.getItem('userToken').then(val => {
+            console.log(JSON.parse(val).access_token);
             if (val != null) {
                 let formdata = new FormData();
                 formdata.append("location", "home");
