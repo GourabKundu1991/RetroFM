@@ -11,6 +11,8 @@ import apiClient from '../api/apiClient';
 import { countryCodes, CountryPicker } from 'react-native-country-codes-picker';
 import { OtpInput } from 'react-native-otp-entry';
 
+import { fetch } from "@react-native-community/netinfo";
+
 const LoginScreen = ({ navigation }) => {
 
     const { t } = useTranslation();
@@ -33,8 +35,28 @@ const LoginScreen = ({ navigation }) => {
 
     const [serverToken, setServerToken] = React.useState("");
 
-
     useEffect(() => {
+        fetch().then(state => {
+            console.log("Connection type", state.type);
+            console.log("Is connected?", state.isConnected);
+            if (state.isConnected) {
+                console.log('Internet is ON');
+                versionChecking();
+            } else {
+                AsyncStorage.getItem('userToken').then(val => {
+                    if (val != null) {
+                        console.log('Internet is OFF');
+                        navigation.navigate("MyDownload");
+                        setLoading(false);
+                    } else {
+                        setLoading(false);
+                    }
+                });
+            }
+        });
+    }, []);
+
+    const versionChecking = () => {
         setLoading(true);
         setCountryCode({ dial_code: '+91', code: 'IN', flag: '🇮🇳' });
         let formdata = new FormData();
@@ -74,7 +96,7 @@ const LoginScreen = ({ navigation }) => {
                 console.log('Version Check Error', error);
                 setLoading(false);
             });
-    }, []);
+    }
 
 
     const onContinue = () => {
@@ -146,7 +168,16 @@ const LoginScreen = ({ navigation }) => {
                     setOtpPop(false);
                     setOtp("");
                     Toast.show({ description: responseJson.message });
-                    onLogin();
+                    if (responseJson.eligable_for_signup == true) {
+                        navigation.navigate("Signup", {
+                            country_code: countryCode.dial_code,
+                            phone: phoneNo,
+                            device_type: DEVICE_TYPE,
+                            device_token: serverToken,
+                        });
+                    } else {
+                        onLogin();
+                    }
                 } else {
                     setLoading(false);
                     Toast.show({ description: responseJson.message });

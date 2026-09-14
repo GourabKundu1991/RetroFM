@@ -29,6 +29,8 @@ import Slider from '@react-native-community/slider';
 import { useFocusEffect } from '@react-navigation/native';
 import { getNativeElementReferenceFromReactNativeDocumentElementInstanceHandle } from 'react-native/types_generated/src/private/webapis/dom/nodes/internals/ReactNativeDocumentElementInstanceHandle';
 
+import RNFS from 'react-native-fs';
+
 const StoryDetailsScreen = ({ navigation, route }) => {
 
     const { t } = useTranslation();
@@ -477,7 +479,7 @@ const StoryDetailsScreen = ({ navigation, route }) => {
         }
     };
 
-    const onDownload = (itemData) => {
+    /* const onDownload = (itemData) => {
         Alert.alert(
             t("Confirmation"),
             t("Are you sure want to download this Story") + "?",
@@ -538,6 +540,58 @@ const StoryDetailsScreen = ({ navigation, route }) => {
             ],
             { cancelable: false }
         );
+    }; */
+
+    const onDownload = async (itemData) => {
+        const url = itemData.audio_url;
+        const filename = `my-offline-story_${itemData.id}.mp3`;
+        const destinationPath = `${RNFS.DocumentDirectoryPath}/${filename}`;
+    
+        setLoading(true);
+    
+        try {
+            const res = await RNFS.downloadFile({
+                fromUrl: url,
+                toFile: destinationPath,
+            }).promise;
+    
+            if (res.statusCode === 200) {
+                console.log('File saved to:', destinationPath);
+    
+                const downloadedItem = {
+                    ...itemData,
+                    localPath: destinationPath,
+                    isDownloaded: true,
+                };
+    
+                const existing = await AsyncStorage.getItem('downloadData');
+                const downloads = existing ? JSON.parse(existing) : [];
+    
+                const index = downloads.findIndex(
+                    item => String(item.id) === String(itemData.id)
+                );
+    
+                if (index >= 0) {
+                    downloads[index] = downloadedItem;
+                    Toast.show({
+                        description: "Story already downloaded",
+                    });
+                } else {
+                    downloads.push(downloadedItem);
+                }
+    
+                await AsyncStorage.setItem(
+                    'downloadData',
+                    JSON.stringify(downloads)
+                );
+    
+                console.log('Download saved:', downloadedItem);
+            }
+        } catch (error) {
+            console.error('Download failed:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const onLikeDislike = () => {
@@ -1051,47 +1105,47 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-
+ 
         height: 75,
-
+ 
         backgroundColor: "#222",
-
+ 
         flexDirection: "row",
-
+ 
         alignItems: "center",
-
+ 
         paddingHorizontal: 12,
-
+ 
         borderTopWidth: 1,
-
+ 
         borderTopColor: "#333",
-
+ 
     },
-
-
-
+ 
+ 
+ 
     playerImage: {
         width: 55,
         height: 55,
         borderRadius: 8,
     },
-
-
-
+ 
+ 
+ 
     playerInfo: {
         flex: 1,
         marginHorizontal: 12,
     },
-
-
+ 
+ 
     playerTitle: {
         color: "#fff",
         fontSize: 15,
         fontWeight: "600",
     },
-
-
-
+ 
+ 
+ 
     timeText: {
         color: "#aaa",
         fontSize: 12,
@@ -1112,103 +1166,103 @@ const styles = StyleSheet.create({
         backgroundColor: "#121212",
         padding: 20,
     },
-
-
-
+ 
+ 
+ 
     fullArtwork: {
         width: "100%",
         height: 320,
         borderRadius: 15,
     },
-
-
+ 
+ 
     controlRow: {
         flexDirection: "row",
         justifyContent: "space-around",
         alignItems: "center",
         marginTop: 30,
     },
-
-
-
+ 
+ 
+ 
     controlButton: {
         justifyContent: "center",
         alignItems: "center",
     },
-
-
+ 
+ 
     controlText: {
         color: "#fff",
         fontSize: 16,
     },
-
-
-
+ 
+ 
+ 
     slider: {
         width: "100%",
         height: 40,
         marginTop: 20,
     },
-
-
-
+ 
+ 
+ 
     sliderTimeRow: {
         flexDirection: "row",
         justifyContent: "space-between",
     },
-
-
+ 
+ 
     sliderTime: {
         color: "#aaa",
         fontSize: 12,
     },
-
-
-
+ 
+ 
+ 
     speedButton: {
         backgroundColor: "#ff9800",
         paddingHorizontal: 15,
         paddingVertical: 8,
         borderRadius: 20,
     },
-
-
+ 
+ 
     speedText: {
         color: "#fff",
         fontWeight: "700",
     },
-
-
-
+ 
+ 
+ 
     modalContainer: {
         flex: 1,
         justifyContent: "flex-end",
         backgroundColor: "rgba(0,0,0,0.5)",
     },
-
-
-
+ 
+ 
+ 
     modalBox: {
         backgroundColor: "#222",
         padding: 20,
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
     },
-
-
+ 
+ 
     modalTitle: {
         color: "#fff",
         fontSize: 20,
         fontWeight: "700",
         marginBottom: 20,
     },
-
-
+ 
+ 
     optionButton: {
         paddingVertical: 15,
     },
-
-
+ 
+ 
     optionText: {
         color: "#fff",
         fontSize: 16,

@@ -17,6 +17,10 @@ import BottomTabs from '../components/BottomTabs';
 import apiClient from '../api/apiClient';
 import FastImage from 'react-native-fast-image';
 
+//import NetInfo from '@react-native-community/netinfo';
+import { fetch } from "@react-native-community/netinfo";
+
+
 /* import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 const adUnitId = 'ca-app-pub-7993937625809320/8111248986'; */
 
@@ -54,7 +58,7 @@ const HomeScreen = ({ navigation }) => {
     const renderBanner = ({ item, index }) => {
         return (
             <View key={index}>
-                <TouchableOpacity onPress={() => navigation.navigate("StoryDetails", {"storyID": item.series_id})} style={{ position: 'relative' }}>
+                <TouchableOpacity onPress={() => navigation.navigate("StoryDetails", { "storyID": item.series_id })} style={{ position: 'relative' }}>
                     <Image style={{ width: '100%', height: 250, resizeMode: 'stretch' }} source={item.banner_image ? { uri: item.banner_image } : require('../assets/images/noimage.png')} />
                     <Box style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', top: 0, left: 0 }}>
                         <Icon name="play-circle" size={70} color="#ffffff" />
@@ -81,7 +85,20 @@ const HomeScreen = ({ navigation }) => {
                         .catch(err => console.log());
                 }
             });
-            getAllCate();
+
+            fetch().then(state => {
+                console.log("Connection type", state.type);
+                console.log("Is connected?", state.isConnected);
+                if (state.isConnected) {
+                    console.log('Internet is ON');
+                    getAllCate();
+                } else {
+                    console.log('Internet is OFF');
+                    navigation.navigate("MyDownload");
+                    setLoading(false);
+                }
+            });
+            
         });
         return unsubscribe;
     }, []);
@@ -123,7 +140,7 @@ const HomeScreen = ({ navigation }) => {
             }
         })
     }
-    
+
     const getHomeData = (cateId) => {
         AsyncStorage.getItem('userToken').then(val => {
             if (val != null) {
@@ -383,7 +400,7 @@ const HomeScreen = ({ navigation }) => {
                                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                                             <HStack space={3}>
                                                 {item.series.map((subitem, subindex) =>
-                                                    <TouchableOpacity key={subindex} onPress={() => navigation.navigate("StoryDetails", {"storyID": subitem.id})} style={{ width: 100 }}>
+                                                    <TouchableOpacity key={subindex} onPress={() => navigation.navigate("StoryDetails", { "storyID": subitem.id })} style={{ width: 100 }}>
                                                         <VStack space={2}>
                                                             <Box width={'100%'} style={{ borderWidth: 2, borderColor: '#666666', borderRadius: 15, overflow: 'hidden', position: 'relative' }}>
                                                                 <FastImage

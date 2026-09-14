@@ -12,6 +12,9 @@ import CommonHeader from '../components/CommonHeader';
 import BottomTabs from '../components/BottomTabs';
 import apiClient from '../api/apiClient';
 import FastImage from 'react-native-fast-image';
+import TrackPlayer from 'react-native-track-player';
+import RNFS from 'react-native-fs';
+import { fetch } from "@react-native-community/netinfo";
 
 const DownloadScreen = ({ navigation }) => {
 
@@ -22,7 +25,20 @@ const DownloadScreen = ({ navigation }) => {
     const [allList, setAllList] = React.useState([]);
     const [isImageLoading, setIsImageLoading] = React.useState(false);
 
+    const [isNetOn, setIsNetOn] = React.useState(true);
+
     useEffect(() => {
+        fetch().then(state => {
+            if (state.isConnected) {
+                console.log('Internet is ON');
+                setIsNetOn(true);
+            } else {
+                setIsNetOn(false);
+            }
+        });
+    }, []);
+
+    /* useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
             setLoading(true);
             AsyncStorage.getItem('language').then(val => {
@@ -55,7 +71,58 @@ const DownloadScreen = ({ navigation }) => {
                 setAllList([]);
             }
         })
-    }
+    } */
+
+    const [downloadList, setDownloadList] = React.useState([]);
+
+    useEffect(() => {
+        loadDownloads();
+    }, []);
+
+    const loadDownloads = async () => {
+        try {
+            const data = await AsyncStorage.getItem('downloadData');
+
+            if (data) {
+                setDownloadList(JSON.parse(data));
+            }
+        } catch (error) {
+            console.log('Load downloads error:', error);
+        }
+    };
+
+    const playDownloadedStory = async (item) => {
+        try {
+            const exists = await RNFS.exists(item.localPath);
+
+            if (!exists) {
+                console.log('Downloaded file does not exist:', item.localPath);
+                return;
+            }
+
+            const audioUrl = item.localPath.startsWith('file://')
+                ? item.localPath
+                : `file://${item.localPath}`;
+
+            console.log('Playing offline:', audioUrl);
+
+            await TrackPlayer.reset();
+
+            await TrackPlayer.add({
+                id: String(item.id),
+                url: audioUrl,
+                title: item.name,
+                artist: item.author_name || 'RetroFM',
+                artwork: item.play_image,
+            });
+
+            await TrackPlayer.play();
+
+        } catch (error) {
+            console.error('Offline playback error:', error);
+        }
+    };
+
     return (
         <NativeBaseProvider>
             <VStack backgroundColor={"#000000"} flex={1}>
@@ -67,20 +134,28 @@ const DownloadScreen = ({ navigation }) => {
                     ]}
                     style={{ position: 'relative', flex: 1 }}
                 >
-                    <CommonHeader showBack={true} search={false} />
+                    <CommonHeader showBack={isNetOn ? true : false} search={false} />
 
                     <ScrollView style={{ width: "100%" }} showsVerticalScrollIndicator={false}>
                         <VStack padding={5} space={5}>
                             <HStack justifyContent={'space-between'} alignItems={'center'} style={{ borderColor: "#444444", borderBottomWidth: 1, width: '100%', paddingVertical: 10, marginBottom: 6 }}>
                                 <Text color={"#ffffff"} fontSize="lg">{t("My Download")}</Text>
                             </HStack>
-                            {allList.length == 0 && (
+                            {downloadList.length == 0 && (
                                 <VStack justifyContent={'center'} alignItems={'center'} style={{ width: '100%', height: 300, backgroundColor: '#111111', borderRadius: 20, overflow: 'hidden', paddingVertical: 20 }}>
                                     <Text textAlign={'center'} color={"#666666"} fontSize="sm" fontWeight="medium">{t("No Record Found")}</Text>
                                 </VStack>
                             )}
                             <VStack flexWrap={'wrap'} justifyContent={'center'}>
-                                {allList.map((item, index) =>
+                                {/* {downloadList.map(item => (
+                                    <TouchableOpacity
+                                        key={item.id}
+                                        onPress={() => playDownloadedStory(item)}
+                                    >
+                                        <Text>{item.name}</Text>
+                                    </TouchableOpacity>
+                                ))} */}
+                                {downloadList.map((item, index) =>
                                     <Pressable key={index} onPress={() => navigation.navigate("PlayDownload", { "story": item })} style={{ width: '100%', paddingVertical: 15, borderBottomWidth: allList.length == index + 1 ? 0 : 1, borderColor: '#555555' }}>
                                         <HStack space={4}>
                                             <VStack style={{ width: '40%' }}>
@@ -121,7 +196,9 @@ const DownloadScreen = ({ navigation }) => {
                         </VStack>
                     </ScrollView>
 
-                    <BottomTabs selected={"-"} />
+                    {isNetOn && (
+                        <BottomTabs selected={"-"} />
+                    )}
                 </LinearGradient>
             </VStack>
             {loading && (
